@@ -52,6 +52,7 @@ const Roadmap = () => {
     {
       id: 1,
       name: "PRiSM",
+      summary: "A Python-based exposure modeling tool using Bloomberg data for inputs, simulating profit impact scenarios where the client is exposed to multiple underlying exposures.",
       goals: Object.values(TEAM_GOALS),
       milestones: [
         {
@@ -79,11 +80,88 @@ const Roadmap = () => {
           id: 4,
           title: "Mean Reversion (FX & Rates)",
           description: "Incorporate Hull-White model for rates and FX, develop a custom methodology and test with client debt.",
-          completion: 0,
-          date: "June 2024"
-        }
+          completion: 100,
+          date: "October 2024"
+        },
+        {
+            id: 5,
+            title: "Model Validation",
+            description: "Getting independent validation of the model is critical to ensure we can proceed with client engagement.",
+            completion: 100,
+            date: "November - December 2024"
+          },
+          {
+            id: 6,
+            title: "New Product DCF",
+            description: "Product requirements: CTO/BM Involvement, Budgeting, Server (VDI), Compliance",
+            completion: 20,
+            date: "January 2025"
+          },
+          {
+            id: 7,
+            title: "Proxy Hedge Recommendation System",
+            description: "System to be able to calculate the correlations between hedgable commoditiies and an unhedgable commodity and recommend the best proxy hedge.",
+            completion: 20,
+            date: "January 2025"
+          }
       ]
     },
+    {
+        id: 2,
+        name: "PRiSM",
+        goals: Object.values(TEAM_GOALS),
+        milestones: [
+          {
+            id: 1,
+            title: "Investigation Phase",
+            description: "Investigated the original PRISM tool, extracted valuable insights and derived modeling logic",
+            completion: 100,
+            date: "March 2024"
+          },
+          {
+            id: 2,
+            title: "Rebuild Phase",
+            description: "The rebuilding of PRiSM started using Python via a Bloomberg connection, which was similar to the original PRISM tool. The aim was to replicate all of the useful features of the original PRISM tool.",
+            completion: 100,
+            date: "April - June 2024"
+          },
+          {
+            id: 3,
+            title: "Client Engagement on POC Phase",
+            description: "The goal is to collaborate with the clients on the completed work. Features include: Correlations between exposures, Exposure volatilities, Sizes of exposures.",
+            completion: 100,
+            date: "May 2024"
+          },
+          {
+            id: 4,
+            title: "Mean Reversion (FX & Rates)",
+            description: "Incorporate Hull-White model for rates and FX, develop a custom methodology and test with client debt.",
+            completion: 100,
+            date: "October 2024"
+          },
+          {
+              id: 5,
+              title: "Model Validation",
+              description: "Getting independent validation of the model is critical to ensure we can proceed with client engagement.",
+              completion: 100,
+              date: "November - December 2024"
+            },
+            {
+              id: 6,
+              title: "New Product DCF",
+              description: "Product requirements: CTO/BM Involvement, Budgeting, Server (VDI), Compliance",
+              completion: 20,
+              date: "January 2025"
+            },
+            {
+              id: 7,
+              title: "Proxy Hedge Recommendation System",
+              description: "System to be able to calculate the correlations between hedgable commoditiies and an unhedgable commodity and recommend the best proxy hedge.",
+              completion: 20,
+              date: "January 2025"
+            }
+        ]
+      },
   ];
 
   useEffect(() => {
@@ -144,16 +222,21 @@ const Roadmap = () => {
 
   return (
     <div className="roadmap-container" ref={containerRef}>
-      <div className="project-tabs">
-        {projects.map((project, index) => (
-          <button
-            key={project.id}
-            className={`tab ${activeProject === index ? 'active' : ''}`}
-            onClick={() => setActiveProject(index)}
-          >
-            {project.name}
-          </button>
-        ))}
+      <div className="project-header">
+        <div className="project-tabs">
+          {projects.map((project, index) => (
+            <button
+              key={project.id}
+              className={`tab ${activeProject === index ? 'active' : ''}`}
+              onClick={() => setActiveProject(index)}
+            >
+              {project.name}
+            </button>
+          ))}
+        </div>
+        <div className="project-summary">
+          {projects[activeProject].summary}
+        </div>
       </div>
       <div className="project-goals">
         <h2>Team Goals</h2>
