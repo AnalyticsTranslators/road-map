@@ -84,31 +84,6 @@ const Roadmap = () => {
         }
       ]
     },
-    {
-      id: 2,
-      name: "Project Beta",
-      goals: [TEAM_GOALS.THOUGHT_LEADER, TEAM_GOALS.CLIENT_CONVERSATIONS],
-      milestones: [
-        {
-          id: 1,
-          title: "Research",
-          description: "Market research and analysis",
-          completion: 100
-        },
-        {
-          id: 2,
-          title: "Development",
-          description: "Main development phase",
-          completion: 50
-        },
-        {
-          id: 3,
-          title: "Launch",
-          description: "Product launch and marketing",
-          completion: 0
-        }
-      ]
-    }
   ];
 
   useEffect(() => {
@@ -204,7 +179,10 @@ const Roadmap = () => {
           <div 
             key={milestone.id}
             className="milestone"
-            style={{ top: `${(index * 100) / (projects[activeProject].milestones.length - 1)}%` }}
+            style={{ 
+              top: `${(index * 100) / (projects[activeProject].milestones.length - 1)}%`,
+              opacity: 1
+            }}
           >
             <div className="milestone-point"></div>
             <div className="milestone-content">
