@@ -3,6 +3,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import '../styles/Roadmap.css';
 import { supabase } from '../supabase/config';
+import useWindowDimensions from '../hooks/useWindowDimensions';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -238,16 +239,98 @@ const EditSummaryModal = ({ isOpen, onClose, currentSummary, onSave }) => {
   );
 };
 
+const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => {
+  const [newUpdate, setNewUpdate] = useState({
+    title: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    status: 'not_started'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const update = {
+      ...newUpdate,
+      id: Date.now()
+    };
+    onSave([...(currentUpdates || []), update]);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Add Status Update</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Title</label>
+            <input
+              type="text"
+              value={newUpdate.title}
+              onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              value={newUpdate.description}
+              onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              value={newUpdate.status}
+              onChange={(e) => setNewUpdate({ ...newUpdate, status: e.target.value })}
+            >
+              <option value="not_started">Not Started</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Date</label>
+            <input
+              type="date"
+              value={newUpdate.date}
+              onChange={(e) => setNewUpdate({ ...newUpdate, date: e.target.value })}
+              required
+            />
+          </div>
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" className="submit-btn">
+              Add Update
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const Roadmap = () => {
   const [activeProject, setActiveProject] = useState(0);
   const roadRef = useRef(null);
   const containerRef = useRef(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const [projects, setProjects] = useState([]);
+  const width = useWindowDimensions();
+  
+  // Add this to determine layout
+  const isMobile = width <= 768;
+  const isTablet = width <= 1200 && width > 768;
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -371,10 +454,6 @@ const Roadmap = () => {
     }
   };
 
-  const handleAddMilestone = () => {
-    setShowAddModal(true);
-  };
-
   const handleAddNewMilestone = (newMilestone) => {
     // Here you would typically make an API call to save to Supabase
     console.log('New milestone:', newMilestone);
@@ -477,72 +556,102 @@ const Roadmap = () => {
     }
   };
 
+  const handleUpdateStatus = async (updates) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ status_updates: updates })
+        .eq('id', projects[activeProject].id);
+
+      if (error) throw error;
+
+      setProjects(prevProjects => {
+        const updatedProjects = [...prevProjects];
+        updatedProjects[activeProject] = {
+          ...updatedProjects[activeProject],
+          status_updates: updates
+        };
+        return updatedProjects;
+      });
+
+      setShowStatusModal(false);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status. Please try again.');
+    }
+  };
+
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
 
   return (
-    <div className="roadmap-container" ref={containerRef}>
-      <div className="app-header">
-        <h1>GM Insights Roadmap</h1>
-        <div className="header-controls">
-          <button onClick={handleSignOut} className="sign-out-button" title="Sign Out">
-            <span className="sign-out-icon">🚪</span>
-          </button>
+    <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
+      {/* Left column - Goals */}
+      <div className="goals-column">
+        <h2>Team Goals</h2>
+        <div className="goals-grid">
+          {Object.values(TEAM_GOALS).map((goal, index) => (
+            <div 
+              key={goal.id} 
+              className={`goal-tile ${projects[activeProject]?.goals.some(g => g.id === goal.id) ? 'achieved' : ''}`}
+              style={{ '--tile-index': index }}
+            >
+              <span className="goal-icon">{goal.icon}</span>
+              <span className="goal-label">{goal.label}</span>
+            </div>
+          ))}
         </div>
       </div>
-      <div className="project-header">
-        <div className="project-tabs">
-          {projects.map((project, index) => (
-            <button
-              key={project.id}
-              className={`tab ${activeProject === index ? 'active' : ''}`}
-              onClick={() => setActiveProject(index)}
-            >
-              {project.name}
+
+      {/* Middle column - Timeline */}
+      <div className="timeline-column">
+        <div className="app-header">
+          <h1>GM Insights Roadmap</h1>
+          <div className="header-controls">
+            <button onClick={handleSignOut} className="sign-out-button" title="Sign Out">
+              <span className="sign-out-icon">🚪</span>
             </button>
-          ))}
-          {userRole === 'editor' && (
-            <button 
-              className="tab add-project-tab"
-              onClick={() => setShowProjectModal(true)}
-              title="Add New Project"
-            >
-              <span>+</span> New Project
-            </button>
-          )}
+          </div>
         </div>
-        {projects.length > 0 && (
-          <div className="project-summary">
-            {projects[activeProject].summary}
+        <div className="project-header">
+          <div className="project-selector">
+            <select 
+              value={activeProject}
+              onChange={(e) => setActiveProject(Number(e.target.value))}
+              className="project-dropdown"
+            >
+              {projects.map((project, index) => (
+                <option key={project.id} value={index}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
             {userRole === 'editor' && (
               <button 
-                className="edit-summary-btn"
-                onClick={() => setShowSummaryModal(true)}
-                title="Edit Summary"
+                className="add-project-btn"
+                onClick={() => setShowProjectModal(true)}
+                title="Add New Project"
               >
-                <span>✏️</span>
+                + New Project
               </button>
             )}
           </div>
-        )}
-      </div>
-      {projects.length > 0 ? (
-        <>
-          <div className="project-goals">
-            <h2>Team Goals</h2>
-            <div className="goals-grid">
-              {Object.values(TEAM_GOALS).map((goal, index) => (
-                <div 
-                  key={goal.id} 
-                  className={`goal-tile ${projects[activeProject].goals.some(g => g.id === goal.id) ? 'achieved' : ''}`}
-                  style={{ '--tile-index': index }}
+          {projects.length > 0 && (
+            <div className="project-summary">
+              {projects[activeProject].summary}
+              {userRole === 'editor' && (
+                <button 
+                  className="edit-summary-btn"
+                  onClick={() => setShowSummaryModal(true)}
+                  title="Edit Summary"
                 >
-                  <span className="goal-icon">{goal.icon}</span>
-                  <span className="goal-label">{goal.label}</span>
-                </div>
-              ))}
+                  <span>✏️</span>
+                </button>
+              )}
             </div>
-          </div>
+          )}
+        </div>
+        {projects.length > 0 && (
           <div className="road" ref={roadRef}>
             <div className="road-line"></div>
             {projects[activeProject].milestones.length > 0 && (
@@ -583,43 +692,54 @@ const Roadmap = () => {
                 </div>
               </div>
             ))}
-          </div>
-          {userRole === 'editor' && (
-            <div className="edit-controls-container">
+            {userRole === 'editor' && (
               <button 
-                className={`edit-mode-toggle ${isEditMode ? 'active' : ''}`}
-                onClick={() => setIsEditMode(!isEditMode)}
-                title={isEditMode ? "Exit Edit Mode" : "Enter Edit Mode"}
+                className="add-milestone-btn"
+                onClick={() => setShowAddModal(true)}
+                title="Add Milestone"
               >
-                <span className="edit-icon">✏️</span>
+                + Add Milestone
               </button>
-            </div>
-          )}
-          {isEditMode && (
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Right column - Status Updates */}
+      <div className="status-column">
+        <div className="section-header">
+          <h2>Status Updates</h2>
+          {userRole === 'editor' && (
             <button 
-              className="add-milestone-circle" 
-              onClick={handleAddMilestone}
-              title="Add Milestone"
+              className="add-status-btn"
+              onClick={() => setShowStatusModal(true)}
             >
-              +
+              + Add Update
             </button>
           )}
-        </>
-      ) : (
-        <div className="empty-state">
-          {userRole === 'editor' ? (
-            <div className="empty-message">
-              <h2>No projects yet</h2>
-              <p>Click the "New Project" button to create your first project.</p>
-            </div>
+        </div>
+        <div className="status-updates-list">
+          {projects[activeProject]?.status_updates?.length > 0 ? (
+            projects[activeProject].status_updates.map(update => (
+              <div key={update.id} className="status-update-card">
+                <div className={`status-tag ${update.status}`}>
+                  {update.status.replace('_', ' ')}
+                </div>
+                <div className="update-content">
+                  <h3>{update.title}</h3>
+                  <p>{update.description}</p>
+                  <time>{update.date}</time>
+                </div>
+              </div>
+            ))
           ) : (
-            <div className="empty-message">
-              <h2>No projects available</h2>
-              <p>Check back later for updates.</p>
+            <div className="no-updates">
+              <p>No status updates yet</p>
             </div>
           )}
         </div>
-      )}
+      </div>
+
       {showAddModal && (
         <AddMilestoneModal
           isOpen={showAddModal}
@@ -640,6 +760,14 @@ const Roadmap = () => {
           onClose={() => setShowSummaryModal(false)}
           currentSummary={projects[activeProject].summary}
           onSave={handleUpdateSummary}
+        />
+      )}
+      {showStatusModal && (
+        <StatusUpdateModal
+          isOpen={showStatusModal}
+          onClose={() => setShowStatusModal(false)}
+          currentUpdates={projects[activeProject].status_updates || []}
+          onSave={handleUpdateStatus}
         />
       )}
     </div>
