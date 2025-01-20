@@ -270,6 +270,13 @@
     font-size: 1rem;
     padding: 0.5rem 1rem;
   }
+
+  .sign-out-button {
+    top: 1rem;
+    right: 1rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+  }
 } 
 
 .milestone-date {
@@ -496,4 +503,27 @@
   .project-header {
     padding-left: 200px;
   }
+}
+
+/* Add these styles for the sign-out button */
+.sign-out-button {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  padding: 0.8rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+}
+
+.sign-out-button:hover {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 0, 0, 0.2);
+  transform: translateY(-2px);
 }

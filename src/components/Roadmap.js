@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import '../styles/Roadmap.css';
+import { supabase } from '../supabase/config';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -179,6 +180,14 @@ const Roadmap = () => {
     };
   }, [activeProject]);
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error.message);
+    }
+  };
+
   return (
     <div className="roadmap-container" ref={containerRef}>
       <div className="project-header">
@@ -244,6 +253,7 @@ const Roadmap = () => {
           </div>
         ))}
       </div>
+      <button onClick={handleSignOut} className="sign-out-button">Sign Out</button>
     </div>
   );
 };
