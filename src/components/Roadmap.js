@@ -190,6 +190,12 @@ const Roadmap = () => {
 
   return (
     <div className="roadmap-container" ref={containerRef}>
+      <div className="app-header">
+        <h1>GM Insights Roadmap</h1>
+        <button onClick={handleSignOut} className="sign-out-button" title="Sign Out">
+          <span className="sign-out-icon">🚪</span>
+        </button>
+      </div>
       <div className="project-header">
         <div className="project-tabs">
           {projects.map((project, index) => (
@@ -253,7 +259,6 @@ const Roadmap = () => {
           </div>
         ))}
       </div>
-      <button onClick={handleSignOut} className="sign-out-button">Sign Out</button>
     </div>
   );
 };

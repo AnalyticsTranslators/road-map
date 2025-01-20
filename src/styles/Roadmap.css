@@ -9,6 +9,7 @@
   overflow: hidden;
   padding-bottom: 20vh;
   position: relative;
+  padding-top: 6rem;
 }
 
 .project-tabs {
@@ -277,6 +278,19 @@
     padding: 0.6rem 1rem;
     font-size: 0.8rem;
   }
+
+  .app-header {
+    padding: 1rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .sign-out-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
 } 
 
 .milestone-date {
@@ -505,25 +519,76 @@
   }
 }
 
-/* Add these styles for the sign-out button */
-.sign-out-button {
+/* Update the header styles */
+.app-header {
   position: fixed;
-  top: 2rem;
-  right: 2rem;
-  padding: 0.8rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #fff;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: rgba(0, 0, 0, 0.95);
   z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: -0.02em;
+  opacity: 0.9;
+}
+
+/* Update sign-out button styles */
+.sign-out-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: 6px;
+  color: #ff4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1001;
 }
 
 .sign-out-button:hover {
-  background: rgba(255, 0, 0, 0.1);
-  border-color: rgba(255, 0, 0, 0.2);
-  transform: translateY(-2px);
+  background: rgba(255, 59, 48, 0.1);
+  transform: translateY(-1px);
+}
+
+.sign-out-icon {
+  font-size: 1.2rem;
+  color: #ff4444;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 1rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .sign-out-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .sign-out-icon {
+    font-size: 1rem;
+  }
 }
