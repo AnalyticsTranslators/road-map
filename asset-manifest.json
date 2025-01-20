@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/road-map/static/css/main.a3978937.css",
-    "main.js": "/road-map/static/js/main.c384b60c.js",
+    "main.css": "/road-map/static/css/main.faa0f114.css",
+    "main.js": "/road-map/static/js/main.3d949dad.js",
     "static/js/952.8d888581.chunk.js": "/road-map/static/js/952.8d888581.chunk.js",
     "static/js/488.ff79e963.chunk.js": "/road-map/static/js/488.ff79e963.chunk.js",
     "index.html": "/road-map/index.html",
-    "main.a3978937.css.map": "/road-map/static/css/main.a3978937.css.map",
-    "main.c384b60c.js.map": "/road-map/static/js/main.c384b60c.js.map",
+    "main.faa0f114.css.map": "/road-map/static/css/main.faa0f114.css.map",
+    "main.3d949dad.js.map": "/road-map/static/js/main.3d949dad.js.map",
     "952.8d888581.chunk.js.map": "/road-map/static/js/952.8d888581.chunk.js.map",
     "488.ff79e963.chunk.js.map": "/road-map/static/js/488.ff79e963.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.a3978937.css",
-    "static/js/main.c384b60c.js"
+    "static/css/main.faa0f114.css",
+    "static/js/main.3d949dad.js"
   ]
 }
