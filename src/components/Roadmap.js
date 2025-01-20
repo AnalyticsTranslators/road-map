@@ -54,7 +54,6 @@ const AddMilestoneModal = ({ isOpen, onClose, onAdd }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onAdd({
-      id: Date.now(),
       title,
       description,
       date,
@@ -315,6 +314,34 @@ const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => 
   );
 };
 
+const FadeInSection = ({ children }) => {
+  const domRef = useRef();
+  const [isVisible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      // In your case there's only one element to observe:     
+      if (entries[0].isIntersecting) {
+        setVisible(true);
+        // No need to keep observing:
+        observer.unobserve(domRef.current);
+      }
+    });
+    
+    observer.observe(domRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div 
+      ref={domRef} 
+      className={`fade-section ${isVisible ? 'is-visible' : ''}`}
+    >
+      {children}
+    </div>
+  );
+};
+
 const Roadmap = () => {
   const [activeProject, setActiveProject] = useState(0);
   const roadRef = useRef(null);
@@ -327,6 +354,7 @@ const Roadmap = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [projects, setProjects] = useState([]);
   const width = useWindowDimensions();
+  const timelineRef = useRef(null);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -335,97 +363,50 @@ const Roadmap = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select(`
             *,
-            milestones (*)
+            milestones (
+              id,
+              title,
+              description,
+              date,
+              completion,
+              position
+            )
           `)
-          .order('id');
-        
-        if (error) {
-          console.error('Error fetching projects:', error);
-          return;
-        }
-        
-        if (data) {
-          setProjects(data);
-        }
+          .order('created_at');
+
+        if (projectsError) throw projectsError;
+
+        // Sort milestones by position
+        const projectsWithSortedMilestones = projectsData.map(project => ({
+          ...project,
+          milestones: (project.milestones || []).sort((a, b) => a.position - b.position)
+        }));
+
+        setProjects(projectsWithSortedMilestones);
       } catch (error) {
         console.error('Error fetching projects:', error);
+        alert('Failed to fetch projects');
       }
     };
 
     fetchProjects();
   }, []);
 
+  // Update the scroll handling effect
   useEffect(() => {
-    const road = roadRef.current;
-    const container = containerRef.current;
+    const timeline = timelineRef.current;
+    if (!timeline || !projects[activeProject]?.milestones?.length) return;
 
-    // Only proceed if road and container exist and we have projects
-    if (!road || !container || !projects.length) return;
-
-    const milestones = road.querySelectorAll('.milestone');
-    const car = road.querySelector('.car');
-
-    // Reset any existing animations
-    gsap.killTweensOf(car);
-    gsap.killTweensOf(milestones);
-
-    // Only proceed if there are milestones
-    if (milestones.length > 0 && car) {
-      // Calculate first milestone position
-      const firstMilestoneTop = milestones[0].offsetTop;
-
-      // Set initial car position to first milestone
-      gsap.set(car, { 
-        opacity: 1,
-        top: firstMilestoneTop
-      });
-
-      // Create timeline for car movement
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: container,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1
-        }
-      });
-
-      // Animate car along the path
-      tl.to(car, {
-        top: "100%",
-        duration: 1,
-        ease: "none"
-      });
-
-      // Animate milestones
-      milestones.forEach((milestone, index) => {
-        gsap.to(milestone, {
-          opacity: 1,
-          x: 0,
-          duration: 0.8,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: milestone,
-            start: "top center+=100",
-            toggleActions: "play none none reverse"
-          }
-        });
-      });
-    } else if (car) {
-      // If no milestones but car exists, just position it at the top
-      gsap.set(car, { 
-        opacity: 1,
-        top: '10%'
-      });
-    }
-
-    return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    const handleScroll = () => {
+      // Only handle milestone visibility if needed
     };
+
+    timeline.addEventListener('scroll', handleScroll);
+    return () => timeline.removeEventListener('scroll', handleScroll);
   }, [activeProject, projects]);
 
   useEffect(() => {
@@ -454,14 +435,50 @@ const Roadmap = () => {
     }
   };
 
-  const handleAddNewMilestone = (newMilestone) => {
-    // Here you would typically make an API call to save to Supabase
-    console.log('New milestone:', newMilestone);
-    // For now, just update local state
-    const updatedProjects = [...projects];
-    updatedProjects[activeProject].milestones.push(newMilestone);
-    // TODO: Update projects in database
-    setShowAddModal(false);
+  const handleAddNewMilestone = async (milestoneData) => {
+    try {
+      // Get the current number of milestones for position
+      const position = projects[activeProject].milestones?.length || 0;
+      
+      // Log the project ID to verify it's a UUID
+      console.log('Project ID:', projects[activeProject].id);
+      
+      // Create the new milestone
+      const { data, error } = await supabase
+        .from('milestones')
+        .insert([
+          {
+            project_id: projects[activeProject].id,
+            title: milestoneData.title,
+            description: milestoneData.description,
+            date: milestoneData.date,
+            completion: milestoneData.completion,
+            position: position
+          }
+        ])
+        .select();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      // Update local state
+      const updatedProjects = [...projects];
+      updatedProjects[activeProject] = {
+        ...updatedProjects[activeProject],
+        milestones: [
+          ...(updatedProjects[activeProject].milestones || []),
+          data[0]
+        ]
+      };
+      setProjects(updatedProjects);
+      setShowAddModal(false);
+
+    } catch (error) {
+      console.error('Error adding milestone:', error);
+      alert('Failed to add milestone. Please try again.');
+    }
   };
 
   const handleAddProject = async (newProject) => {
@@ -581,6 +598,14 @@ const Roadmap = () => {
     }
   };
 
+  const handleProjectChange = (index) => {
+    setActiveProject(index);
+    // Scroll timeline to top when changing projects
+    if (timelineRef.current) {
+      timelineRef.current.scrollTop = 0;
+    }
+  };
+
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
 
@@ -604,7 +629,7 @@ const Roadmap = () => {
       </div>
 
       {/* Middle column - Timeline */}
-      <div className="timeline-column">
+      <div className="timeline-column" ref={timelineRef}>
         <div className="app-header">
           <h1>GM Insights Roadmap</h1>
           <div className="header-controls">
@@ -617,7 +642,7 @@ const Roadmap = () => {
           <div className="project-selector">
             <select 
               value={activeProject}
-              onChange={(e) => setActiveProject(Number(e.target.value))}
+              onChange={(e) => handleProjectChange(Number(e.target.value))}
               className="project-dropdown"
             >
               {projects.map((project, index) => (
@@ -654,43 +679,33 @@ const Roadmap = () => {
         {projects.length > 0 && (
           <div className="road" ref={roadRef}>
             <div className="road-line"></div>
-            {projects[activeProject].milestones.length > 0 && (
-              <div className="car">
-                <div className="car-icon">🚗</div>
-              </div>
-            )}
             {projects[activeProject].milestones.map((milestone, index) => (
-              <div 
-                key={milestone.id}
-                className={`milestone ${isEditMode ? 'editable' : ''}`}
-                style={{ 
-                  top: `${(index * 100) / (projects[activeProject].milestones.length - 1)}%`,
-                  opacity: 1
-                }}
-              >
-                <div className="milestone-point"></div>
-                <div className="milestone-content">
-                  {isEditMode && (
-                    <div className="edit-controls">
-                      <button className="edit-btn" title="Edit">✏️</button>
-                      <button className="delete-btn" title="Delete">🗑️</button>
-                      <button className="move-btn" title="Drag to reorder">↕️</button>
+              <FadeInSection key={milestone.id}>
+                <div className="milestone">
+                  <div className="milestone-point"></div>
+                  <div className="milestone-content">
+                    {isEditMode && (
+                      <div className="edit-controls">
+                        <button className="edit-btn" title="Edit">✏️</button>
+                        <button className="delete-btn" title="Delete">🗑️</button>
+                        <button className="move-btn" title="Drag to reorder">↕️</button>
+                      </div>
+                    )}
+                    <div className="milestone-header">
+                      <h3>{milestone.title}</h3>
+                      <span className="completion">{milestone.completion}%</span>
                     </div>
-                  )}
-                  <div className="milestone-header">
-                    <h3>{milestone.title}</h3>
-                    <span className="completion">{milestone.completion}%</span>
-                  </div>
-                  <div className="milestone-date">{milestone.date}</div>
-                  <p>{milestone.description}</p>
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill"
-                      style={{ width: `${milestone.completion}%` }}
-                    ></div>
+                    <div className="milestone-date">{milestone.date}</div>
+                    <p>{milestone.description}</p>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill"
+                        style={{ width: `${milestone.completion}%` }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </FadeInSection>
             ))}
             {userRole === 'editor' && (
               <button 

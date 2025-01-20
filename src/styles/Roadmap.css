@@ -109,56 +109,41 @@
   position: relative;
   width: 100%;
   max-width: 800px;
-  height: auto;
-  min-height: 500px;
   margin: 0 auto;
-  padding: 2rem 1rem;
-  box-sizing: border-box;
+  padding: 120px 2rem 4rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 6rem;
 }
 
 .road-line {
+  position: absolute;
   width: 2px;
-  height: 100%;
+  left: 50%;
+  top: 120px;
+  bottom: 120px;
   background: linear-gradient(180deg, 
     rgba(0,170,255,0.1) 0%,
     rgba(0,170,255,0.3) 50%,
     rgba(0,170,255,0.1) 100%
   );
-  position: absolute;
-  left: 50%;
   transform: translateX(-50%);
-}
-
-.car {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  filter: drop-shadow(0 0 20px rgba(0,170,255,0.3));
-  animation: float 3s ease-in-out infinite;
-}
-
-.car-icon {
-  font-size: 2.5rem;
-  transform: rotate(0deg);
+  z-index: 1;
 }
 
 .milestone {
-  position: absolute;
-  left: 0;
+  position: relative;
   width: 100%;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
-  padding: 0 1rem;
-  box-sizing: border-box;
+  min-height: 100px;
+  transition: all 0.3s ease;
+  margin-bottom: 4rem;
 }
 
 .milestone:first-child {
-  top: 0;
+  margin-top: 0;
+  opacity: 1;
 }
 
 .milestone:hover {
@@ -178,27 +163,26 @@
 }
 
 .milestone-content {
+  position: relative;
   width: calc(50% - 3rem);
-  max-width: 350px;
-  word-wrap: break-word;
-  margin: 1rem 0;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   padding: 1.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  margin: 0;  /* Reset any default margins */
 }
 
-/* Position content alternating left and right */
+/* Odd numbered milestones (1st, 3rd, etc.) - LEFT side */
 .milestone:nth-child(odd) .milestone-content {
-  margin-left: auto;
-  margin-right: calc(50% + 2rem);
+  margin-left: 0;
+  margin-right: auto;
 }
 
+/* Even numbered milestones (2nd, 4th, etc.) - RIGHT side */
 .milestone:nth-child(even) .milestone-content {
-  margin-right: auto;
-  margin-left: calc(50% + 2rem);
+  margin-left: auto;
+  margin-right: 0;
 }
 
 .milestone-content:hover {
@@ -251,27 +235,36 @@
 
 @keyframes float {
   0%, 100% {
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
   50% {
-    transform: translateX(-50%) translateY(-5px);
+    transform: translateY(-10px);
   }
 }
 
 @media (max-width: 768px) {
-  .milestone-content {
-    width: 250px;
-    font-size: 0.9rem;
-  }
-  
-  .milestone:nth-child(2n) .milestone-content,
-  .milestone:nth-child(2n+1) .milestone-content {
-    margin-left: calc(50% + 2rem);
-    margin-right: auto;
+  .milestone {
+    padding: 1rem;
+    margin: 1rem 0;
   }
   
   .road {
-    padding: 0 1rem;
+    padding: 2rem 1rem;
+  }
+  
+  .milestone-content {
+    width: calc(100% - 4rem);
+    margin-left: 2rem !important;  /* Override the alternating pattern on mobile */
+  }
+  
+  .road-line {
+    left: 2rem;
+    transform: none;
+  }
+  
+  .milestone-point {
+    left: 2rem;
+    transform: none;
   }
   
   .project-tabs {
@@ -430,7 +423,7 @@
 } 
 
 .milestone:last-child {
-  /* Remove bottom and top positioning */
+  margin-bottom: 2rem;
 }
 
 /* Add a glow animation for active tab */
@@ -447,13 +440,21 @@
   animation: tabGlow 4s infinite;
 }
 
-/* Project header and summary container */
+/* Project header with gradient overlay */
 .project-header {
   width: 100%;
   max-width: 800px;
-  margin-bottom: 3rem;
-  padding: 0 2rem;
+  margin: 0 auto 2rem auto;
+  padding: 1rem 2rem;
   box-sizing: border-box;
+  background: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0));
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.project-selector, .project-summary {
+  pointer-events: all; /* Re-enable clicking for these elements */
 }
 
 /* Project selector container */
@@ -481,17 +482,17 @@
   box-sizing: border-box;
 }
 
-/* Timeline column container */
+/* Timeline container */
 .timeline-column {
-  padding: 2rem;
-  min-height: calc(100vh - 80px);
+  padding: 0;
+  height: calc(100vh - 80px);
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-sizing: border-box;
 }
 
 /* Responsive adjustments */
@@ -1394,25 +1395,21 @@
 }
 
 .add-milestone-btn {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  margin: 2rem auto;
   padding: 0.8rem 1.5rem;
-  background: linear-gradient(45deg, rgba(0, 170, 255, 0.1), rgba(0, 170, 255, 0.2));
+  background: rgba(0, 170, 255, 0.1);
   border: 1px solid rgba(0, 170, 255, 0.3);
   border-radius: 8px;
   color: #fff;
   cursor: pointer;
-  font-size: 0.9rem;
   transition: all 0.2s ease;
-  z-index: 10;
-  backdrop-filter: blur(5px);
+  z-index: 2;
 }
 
 .add-milestone-btn:hover {
-  background: linear-gradient(45deg, rgba(0, 170, 255, 0.2), rgba(0, 170, 255, 0.3));
-  transform: translateX(-50%) translateY(-2px);
+  background: rgba(0, 170, 255, 0.2);
+  transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(0, 170, 255, 0.1);
 }
 
@@ -1429,14 +1426,12 @@
 
 /* Style the timeline column */
 .timeline-column {
-  padding: 2rem;
-  min-height: calc(100vh - 80px);
+  padding: 0;
+  height: calc(100vh - 80px);
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: relative;
 }
 
 /* Style the status column */
@@ -1625,9 +1620,13 @@ h1, h2, h3, p {
 .project-header {
   width: 100%;
   max-width: 800px;
-  margin-bottom: 3rem;
-  padding: 0 2rem;
+  margin: 0 auto 2rem auto;
+  padding: 1rem 2rem;
   box-sizing: border-box;
+  background: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0));
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 /* Responsive adjustments */
@@ -1646,4 +1645,20 @@ h1, h2, h3, p {
     width: 100%;
     max-width: unset;
   }
+}
+
+/* Add these styles for the fade effect */
+.fade-section {
+  width: 100%;
+  opacity: 0;
+  transform: translateY(20vh);
+  visibility: hidden;
+  transition: opacity 0.6s ease-out, transform 1s ease-out;
+  will-change: opacity, visibility;
+}
+
+.fade-section.is-visible {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
 }
