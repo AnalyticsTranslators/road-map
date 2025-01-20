@@ -681,7 +681,7 @@ const Roadmap = () => {
             <div className="road-line"></div>
             {projects[activeProject].milestones.map((milestone, index) => (
               <FadeInSection key={milestone.id}>
-                <div className="milestone">
+                <div className={`milestone ${index % 2 === 0 ? 'milestone-left' : 'milestone-right'}`}>
                   <div className="milestone-point"></div>
                   <div className="milestone-content">
                     {isEditMode && (
