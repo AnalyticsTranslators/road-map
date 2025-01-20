@@ -199,6 +199,45 @@ const AddProjectModal = ({ isOpen, onClose, onAdd }) => {
   );
 };
 
+const EditSummaryModal = ({ isOpen, onClose, currentSummary, onSave }) => {
+  const [summary, setSummary] = useState(currentSummary);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(summary);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Edit Project Summary</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Summary</label>
+            <textarea
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              required
+              rows={4}
+            />
+          </div>
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" className="submit-btn">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const Roadmap = () => {
   const [activeProject, setActiveProject] = useState(0);
   const roadRef = useRef(null);
@@ -207,103 +246,30 @@ const Roadmap = () => {
   const [userRole, setUserRole] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
-  const [projects, setProjects] = useState([
-    {
-      id: 1,
-      name: "PRiSM",
-      summary: "A Python-based exposure modeling tool using Bloomberg data for inputs, simulating profit impact scenarios where the client is exposed to multiple underlying exposures.",
-      goals: Object.values(TEAM_GOALS),
-      milestones: [
-        {
-          id: 1,
-          title: "Investigation Phase",
-          description: "Investigated the original PRISM tool, extracted valuable insights and derived modeling logic",
-          completion: 100,
-          date: "March 2024"
-        },
-        {
-          id: 2,
-          title: "Rebuild Phase",
-          description: "The rebuilding of PRiSM started using Python via a Bloomberg connection, which was similar to the original PRISM tool. The aim was to replicate all of the useful features of the original PRISM tool.",
-          completion: 100,
-          date: "April - June 2024"
-        },
-        {
-          id: 3,
-          title: "Client Engagement on POC Phase",
-          description: "The goal is to collaborate with the clients on the completed work. Features include: Correlations between exposures, Exposure volatilities, Sizes of exposures.",
-          completion: 100,
-          date: "May 2024"
-        },
-        {
-          id: 4,
-          title: "Mean Reversion (FX & Rates)",
-          description: "Incorporate Hull-White model for rates and FX, develop a custom methodology and test with client debt.",
-          completion: 100,
-          date: "October 2024"
-        },
-        {
-            id: 5,
-            title: "Model Validation",
-            description: "Getting independent validation of the model is critical to ensure we can proceed with client engagement.",
-            completion: 100,
-            date: "November - December 2024"
-          },
-          {
-            id: 6,
-            title: "New Product DCF",
-            description: "Product requirements: CTO/BM Involvement, Budgeting, Server (VDI), Compliance",
-            completion: 20,
-            date: "January 2025"
-          },
-          {
-            id: 7,
-            title: "Proxy Hedge Recommendation System",
-            description: "System to be able to calculate the correlations between hedgable commoditiies and an unhedgable commodity and recommend the best proxy hedge.",
-            completion: 20,
-            date: "January 2025"
-          }
-      ]
-    },
-    {
-        id: 2,
-        name: "EventLens",
-        summary: "To be continued...",
-        goals: [TEAM_GOALS.THOUGHT_LEADER, TEAM_GOALS.CLIENT_CONVERSATIONS],
-        milestones: [
-          {
-            id: 1,
-            title: "Test",
-            description: "To be continued...",
-            completion: 100,
-            date: "March 2024"
-          }
-        ]
-      },
-  ]);
-
-  const initialProjectsRef = useRef(projects);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [projects, setProjects] = useState([]);
 
   useEffect(() => {
     const fetchProjects = async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          milestones (*)
-        `)
-        .order('id');
-      
-      if (error) {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            milestones (*)
+          `)
+          .order('id');
+        
+        if (error) {
+          console.error('Error fetching projects:', error);
+          return;
+        }
+        
+        if (data) {
+          setProjects(data);
+        }
+      } catch (error) {
         console.error('Error fetching projects:', error);
-        return;
-      }
-      
-      if (data && data.length > 0) {
-        const existingProjects = initialProjectsRef.current.filter(
-          p => !data.some(dp => dp.id === p.id)
-        );
-        setProjects([...existingProjects, ...data]);
       }
     };
 
@@ -313,6 +279,10 @@ const Roadmap = () => {
   useEffect(() => {
     const road = roadRef.current;
     const container = containerRef.current;
+
+    // Only proceed if road and container exist and we have projects
+    if (!road || !container || !projects.length) return;
+
     const milestones = road.querySelectorAll('.milestone');
     const car = road.querySelector('.car');
 
@@ -321,7 +291,7 @@ const Roadmap = () => {
     gsap.killTweensOf(milestones);
 
     // Only proceed if there are milestones
-    if (milestones.length > 0) {
+    if (milestones.length > 0 && car) {
       // Calculate first milestone position
       const firstMilestoneTop = milestones[0].offsetTop;
 
@@ -362,8 +332,8 @@ const Roadmap = () => {
           }
         });
       });
-    } else {
-      // If no milestones, just position the car at the top
+    } else if (car) {
+      // If no milestones but car exists, just position it at the top
       gsap.set(car, { 
         opacity: 1,
         top: '10%'
@@ -373,7 +343,7 @@ const Roadmap = () => {
     return () => {
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };
-  }, [activeProject]);
+  }, [activeProject, projects]);
 
   useEffect(() => {
     const getUserRole = async () => {
@@ -481,6 +451,32 @@ const Roadmap = () => {
     }
   };
 
+  const handleUpdateSummary = async (newSummary) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ summary: newSummary })
+        .eq('id', projects[activeProject].id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProjects(prevProjects => {
+        const updatedProjects = [...prevProjects];
+        updatedProjects[activeProject] = {
+          ...updatedProjects[activeProject],
+          summary: newSummary
+        };
+        return updatedProjects;
+      });
+
+      setShowSummaryModal(false);
+    } catch (error) {
+      console.error('Error updating summary:', error);
+      alert('Failed to update summary. Please try again.');
+    }
+  };
+
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
 
@@ -515,85 +511,114 @@ const Roadmap = () => {
             </button>
           )}
         </div>
-        <div className="project-summary">
-          {projects[activeProject].summary}
-        </div>
-      </div>
-      <div className="project-goals">
-        <h2>Team Goals</h2>
-        <div className="goals-grid">
-          {Object.values(TEAM_GOALS).map((goal, index) => (
-            <div 
-              key={goal.id} 
-              className={`goal-tile ${projects[activeProject].goals.some(g => g.id === goal.id) ? 'achieved' : ''}`}
-              style={{ '--tile-index': index }}
-            >
-              <span className="goal-icon">{goal.icon}</span>
-              <span className="goal-label">{goal.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="road" ref={roadRef}>
-        <div className="road-line"></div>
-        {projects[activeProject].milestones.length > 0 && (
-          <div className="car">
-            <div className="car-icon">🚗</div>
+        {projects.length > 0 && (
+          <div className="project-summary">
+            {projects[activeProject].summary}
+            {userRole === 'editor' && (
+              <button 
+                className="edit-summary-btn"
+                onClick={() => setShowSummaryModal(true)}
+                title="Edit Summary"
+              >
+                <span>✏️</span>
+              </button>
+            )}
           </div>
         )}
-        {projects[activeProject].milestones.map((milestone, index) => (
-          <div 
-            key={milestone.id}
-            className={`milestone ${isEditMode ? 'editable' : ''}`}
-            style={{ 
-              top: `${(index * 100) / (projects[activeProject].milestones.length - 1)}%`,
-              opacity: 1
-            }}
-          >
-            <div className="milestone-point"></div>
-            <div className="milestone-content">
-              {isEditMode && (
-                <div className="edit-controls">
-                  <button className="edit-btn" title="Edit">✏️</button>
-                  <button className="delete-btn" title="Delete">🗑️</button>
-                  <button className="move-btn" title="Drag to reorder">↕️</button>
-                </div>
-              )}
-              <div className="milestone-header">
-                <h3>{milestone.title}</h3>
-                <span className="completion">{milestone.completion}%</span>
-              </div>
-              <div className="milestone-date">{milestone.date}</div>
-              <p>{milestone.description}</p>
-              <div className="progress-bar">
+      </div>
+      {projects.length > 0 ? (
+        <>
+          <div className="project-goals">
+            <h2>Team Goals</h2>
+            <div className="goals-grid">
+              {Object.values(TEAM_GOALS).map((goal, index) => (
                 <div 
-                  className="progress-fill"
-                  style={{ width: `${milestone.completion}%` }}
-                ></div>
-              </div>
+                  key={goal.id} 
+                  className={`goal-tile ${projects[activeProject].goals.some(g => g.id === goal.id) ? 'achieved' : ''}`}
+                  style={{ '--tile-index': index }}
+                >
+                  <span className="goal-icon">{goal.icon}</span>
+                  <span className="goal-label">{goal.label}</span>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
-      {userRole === 'editor' && (
-        <div className="edit-controls-container">
-          <button 
-            className={`edit-mode-toggle ${isEditMode ? 'active' : ''}`}
-            onClick={() => setIsEditMode(!isEditMode)}
-            title={isEditMode ? "Exit Edit Mode" : "Enter Edit Mode"}
-          >
-            <span className="edit-icon">✏️</span>
-          </button>
+          <div className="road" ref={roadRef}>
+            <div className="road-line"></div>
+            {projects[activeProject].milestones.length > 0 && (
+              <div className="car">
+                <div className="car-icon">🚗</div>
+              </div>
+            )}
+            {projects[activeProject].milestones.map((milestone, index) => (
+              <div 
+                key={milestone.id}
+                className={`milestone ${isEditMode ? 'editable' : ''}`}
+                style={{ 
+                  top: `${(index * 100) / (projects[activeProject].milestones.length - 1)}%`,
+                  opacity: 1
+                }}
+              >
+                <div className="milestone-point"></div>
+                <div className="milestone-content">
+                  {isEditMode && (
+                    <div className="edit-controls">
+                      <button className="edit-btn" title="Edit">✏️</button>
+                      <button className="delete-btn" title="Delete">🗑️</button>
+                      <button className="move-btn" title="Drag to reorder">↕️</button>
+                    </div>
+                  )}
+                  <div className="milestone-header">
+                    <h3>{milestone.title}</h3>
+                    <span className="completion">{milestone.completion}%</span>
+                  </div>
+                  <div className="milestone-date">{milestone.date}</div>
+                  <p>{milestone.description}</p>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill"
+                      style={{ width: `${milestone.completion}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {userRole === 'editor' && (
+            <div className="edit-controls-container">
+              <button 
+                className={`edit-mode-toggle ${isEditMode ? 'active' : ''}`}
+                onClick={() => setIsEditMode(!isEditMode)}
+                title={isEditMode ? "Exit Edit Mode" : "Enter Edit Mode"}
+              >
+                <span className="edit-icon">✏️</span>
+              </button>
+            </div>
+          )}
+          {isEditMode && (
+            <button 
+              className="add-milestone-circle" 
+              onClick={handleAddMilestone}
+              title="Add Milestone"
+            >
+              +
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="empty-state">
+          {userRole === 'editor' ? (
+            <div className="empty-message">
+              <h2>No projects yet</h2>
+              <p>Click the "New Project" button to create your first project.</p>
+            </div>
+          ) : (
+            <div className="empty-message">
+              <h2>No projects available</h2>
+              <p>Check back later for updates.</p>
+            </div>
+          )}
         </div>
-      )}
-      {isEditMode && (
-        <button 
-          className="add-milestone-circle" 
-          onClick={handleAddMilestone}
-          title="Add Milestone"
-        >
-          +
-        </button>
       )}
       {showAddModal && (
         <AddMilestoneModal
@@ -607,6 +632,14 @@ const Roadmap = () => {
           isOpen={showProjectModal}
           onClose={() => setShowProjectModal(false)}
           onAdd={handleAddProject}
+        />
+      )}
+      {showSummaryModal && (
+        <EditSummaryModal
+          isOpen={showSummaryModal}
+          onClose={() => setShowSummaryModal(false)}
+          currentSummary={projects[activeProject].summary}
+          onSave={handleUpdateSummary}
         />
       )}
     </div>
