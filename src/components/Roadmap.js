@@ -1157,9 +1157,9 @@ const Roadmap = () => {
             projects[activeProject].status_updates.map(update => (
               <div key={update.id} className="status-update-card">
                 {userRole === 'editor' && (
-                  <div className="status-controls">
+                  <div className="edit-controls">
                     <button 
-                      className="edit-status-btn"
+                      className="edit-btn"
                       onClick={() => {
                         setSelectedStatus(update);
                         setShowEditStatusModal(true);
@@ -1169,7 +1169,7 @@ const Roadmap = () => {
                       ✏️
                     </button>
                     <button 
-                      className="delete-status-btn"
+                      className="delete-btn"
                       onClick={() => {
                         setItemToDelete(update);
                         setShowDeleteStatusModal(true);

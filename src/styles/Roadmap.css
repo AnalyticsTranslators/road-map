@@ -649,6 +649,7 @@
   position: relative;
 }
 
+/* Common edit controls styles */
 .edit-controls {
   position: absolute;
   top: 0.5rem;
@@ -660,28 +661,58 @@
   z-index: 2;
 }
 
-.milestone-content:hover .edit-controls {
+/* Make edit controls visible on hover for both milestone and status cards */
+.milestone-content:hover .edit-controls,
+.status-update-card:hover .edit-controls {
   opacity: 1;
 }
 
-.edit-btn {
+/* Button styles */
+.edit-btn, 
+.delete-btn {
   width: 28px;
   height: 28px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
+.edit-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
 .edit-btn:hover {
   background: rgba(0, 170, 255, 0.1);
-  border-color: rgba(0, 170, 255, 0.3);
+  border-color: rgba(0, 170, 255, 0.2);
   transform: translateY(-1px);
+}
+
+.delete-btn {
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.2);
+  border-radius: 4px;
+}
+
+.delete-btn:hover {
+  background: rgba(255, 59, 48, 0.2);
+  border-color: rgba(255, 59, 48, 0.3);
+  transform: translateY(-1px);
+}
+
+.status-update-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  padding-right: 4.5rem;
+  margin-bottom: 0.25rem;
+  transition: all 0.2s ease;
 }
 
 /* Remove the old add-milestone-btn styles and add these new styles */
@@ -1105,42 +1136,35 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   padding: 0.35rem 0.5rem;
-  padding-right: 3.5rem;
+  padding-right: 4.5rem;
   margin-bottom: 0.25rem;
   transition: all 0.2s ease;
 }
 
 .status-controls {
   position: absolute;
-  top: 0.35rem;
-  right: 0.35rem;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
   display: flex;
   gap: 0.25rem;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.status-update-card:hover .status-controls {
-  opacity: 1;
+  z-index: 2;
 }
 
 .edit-status-btn,
 .delete-status-btn {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.7rem;
-}
-
-.edit-status-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .edit-status-btn:hover {
@@ -1148,121 +1172,9 @@
   border-color: rgba(0, 170, 255, 0.2);
 }
 
-.delete-status-btn {
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid rgba(255, 59, 48, 0.2);
-}
-
 .delete-status-btn:hover {
-  background: rgba(255, 59, 48, 0.15);
-  border-color: rgba(255, 59, 48, 0.25);
-}
-
-.update-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.update-content h3 {
-  font-size: 0.75rem;
-  margin: 0;
-  color: #fff;
-  font-weight: 500;
-}
-
-.update-content p {
-  font-size: 0.65rem;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.2;
-}
-
-.update-content time {
-  font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin-top: 0.1rem;
-}
-
-.status-tag {
-  display: inline-block;
-  font-size: 0.6rem;
-  padding: 0.1rem 0.25rem;
-  border-radius: 2px;
-  margin-bottom: 0.15rem;
-  text-transform: capitalize;
-  letter-spacing: 0.02em;
-}
-
-.status-tag.completed {
-  background: rgba(52, 199, 89, 0.1);
-  color: rgb(52, 199, 89);
-  border: 1px solid rgba(52, 199, 89, 0.2);
-}
-
-.status-tag.in_progress {
-  background: rgba(255, 204, 0, 0.1);
-  color: rgb(255, 204, 0);
-  border: 1px solid rgba(255, 204, 0, 0.2);
-}
-
-.status-tag.not_started {
   background: rgba(255, 59, 48, 0.1);
-  color: rgb(255, 59, 48);
-  border: 1px solid rgba(255, 59, 48, 0.2);
-}
-
-.status-updates-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.25rem;
-}
-
-.status-column {
-  padding: 0.75rem;
-}
-
-.section-header {
-  margin-bottom: 0.75rem;
-  padding: 0 0.25rem;
-}
-
-.section-header h2 {
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.add-status-btn {
-  padding: 0.35rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 3px;
-  background: rgba(0, 170, 255, 0.1);
-  border: 1px solid rgba(0, 170, 255, 0.2);
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.add-status-btn:hover {
-  background: rgba(0, 170, 255, 0.15);
-  border-color: rgba(0, 170, 255, 0.3);
-}
-
-.status-updates-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.status-update-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  transition: all 0.3s ease;
+  border-color: rgba(255, 59, 48, 0.2);
 }
 
 .status-update-card:hover {
