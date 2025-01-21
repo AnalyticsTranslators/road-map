@@ -45,6 +45,13 @@ const TEAM_GOALS = {
   }
 };
 
+const NOTE_TYPES = {
+  BLOCKER: { icon: '🚫', label: 'Blocker' },
+  DEPENDENCY: { icon: '🔄', label: 'Dependency' },
+  WARNING: { icon: '⚠️', label: 'Warning' },
+  INFO: { icon: 'ℹ️', label: 'Info' }
+};
+
 const AddMilestoneModal = ({ isOpen, onClose, onAdd }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -319,6 +326,21 @@ const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
   const [description, setDescription] = useState(milestone.description);
   const [date, setDate] = useState(milestone.date);
   const [completion, setCompletion] = useState(milestone.completion);
+  const [notes, setNotes] = useState(milestone.notes || []);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const [newNote, setNewNote] = useState({ type: 'INFO', content: '' });
+
+  const handleAddNote = () => {
+    if (newNote.content.trim()) {
+      setNotes([...notes, { ...newNote, id: Date.now() }]);
+      setNewNote({ type: 'INFO', content: '' });
+      setShowAddNote(false);
+    }
+  };
+
+  const handleRemoveNote = (noteId) => {
+    setNotes(notes.filter(note => note.id !== noteId));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -327,7 +349,8 @@ const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
       title,
       description,
       date,
-      completion: Number(completion)
+      completion: Number(completion),
+      notes
     });
     onClose();
   };
@@ -376,6 +399,63 @@ const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
               max="100"
               required
             />
+          </div>
+          <div className="form-group">
+            <div className="notes-header">
+              <label>Notes</label>
+              <button 
+                type="button" 
+                className="add-note-btn"
+                onClick={() => setShowAddNote(true)}
+              >
+                + Add Note
+              </button>
+            </div>
+            {showAddNote && (
+              <div className="add-note-form">
+                <select
+                  value={newNote.type}
+                  onChange={(e) => setNewNote({ ...newNote, type: e.target.value })}
+                  className="note-type-select"
+                >
+                  {Object.entries(NOTE_TYPES).map(([key, { icon, label }]) => (
+                    <option key={key} value={key}>
+                      {icon} {label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={newNote.content}
+                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                  placeholder="Enter note content..."
+                  className="note-input"
+                />
+                <div className="note-actions">
+                  <button type="button" className="cancel-note-btn" onClick={() => setShowAddNote(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="add-note-submit-btn" onClick={handleAddNote}>
+                    Add
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="notes-list">
+              {notes.map(note => (
+                <div key={note.id} className={`note-item note-${note.type.toLowerCase()}`}>
+                  <span className="note-icon">{NOTE_TYPES[note.type].icon}</span>
+                  <span className="note-content">{note.content}</span>
+                  <button
+                    type="button"
+                    className="remove-note-btn"
+                    onClick={() => handleRemoveNote(note.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="cancel-btn">
@@ -495,6 +575,27 @@ const FadeInSection = ({ children }) => {
   );
 };
 
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal confirmation-modal">
+        <h2>{title}</h2>
+        <p className="confirmation-message">{message}</p>
+        <div className="modal-actions">
+          <button type="button" onClick={onClose} className="cancel-btn">
+            Cancel
+          </button>
+          <button type="button" onClick={onConfirm} className="delete-btn">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Roadmap = () => {
   const [activeProject, setActiveProject] = useState(0);
   const roadRef = useRef(null);
@@ -512,6 +613,9 @@ const Roadmap = () => {
   const timelineRef = useRef(null);
   const [showEditStatusModal, setShowEditStatusModal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
+  const [showDeleteMilestoneModal, setShowDeleteMilestoneModal] = useState(false);
+  const [showDeleteStatusModal, setShowDeleteStatusModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -837,6 +941,63 @@ const Roadmap = () => {
     }
   };
 
+  // Add delete handlers
+  const handleDeleteMilestone = async (milestone) => {
+    try {
+      const { error } = await supabase
+        .from('milestones')
+        .delete()
+        .eq('id', milestone.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProjects(prevProjects => {
+        const updatedProjects = [...prevProjects];
+        updatedProjects[activeProject] = {
+          ...updatedProjects[activeProject],
+          milestones: updatedProjects[activeProject].milestones.filter(m => m.id !== milestone.id)
+        };
+        return updatedProjects;
+      });
+
+      setShowDeleteMilestoneModal(false);
+      setItemToDelete(null);
+    } catch (error) {
+      console.error('Error deleting milestone:', error);
+      alert('Failed to delete milestone. Please try again.');
+    }
+  };
+
+  const handleDeleteStatus = async (status) => {
+    try {
+      const currentUpdates = projects[activeProject].status_updates || [];
+      const updatedUpdates = currentUpdates.filter(update => update.id !== status.id);
+
+      const { error } = await supabase
+        .from('projects')
+        .update({ status_updates: updatedUpdates })
+        .eq('id', projects[activeProject].id);
+
+      if (error) throw error;
+
+      setProjects(prevProjects => {
+        const updatedProjects = [...prevProjects];
+        updatedProjects[activeProject] = {
+          ...updatedProjects[activeProject],
+          status_updates: updatedUpdates
+        };
+        return updatedProjects;
+      });
+
+      setShowDeleteStatusModal(false);
+      setItemToDelete(null);
+    } catch (error) {
+      console.error('Error deleting status:', error);
+      alert('Failed to delete status update. Please try again.');
+    }
+  };
+
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
 
@@ -927,6 +1088,16 @@ const Roadmap = () => {
                         >
                           ✏️
                         </button>
+                        <button 
+                          className="delete-btn" 
+                          title="Delete"
+                          onClick={() => {
+                            setItemToDelete(milestone);
+                            setShowDeleteMilestoneModal(true);
+                          }}
+                        >
+                          🗑️
+                        </button>
                       </div>
                     )}
                     <div className="milestone-header">
@@ -935,6 +1106,16 @@ const Roadmap = () => {
                     </div>
                     <div className="milestone-date">{milestone.date}</div>
                     <p>{milestone.description}</p>
+                    {milestone.notes && milestone.notes.length > 0 && (
+                      <div className="milestone-notes">
+                        {milestone.notes.map(note => (
+                          <div key={note.id} className={`note-item note-${note.type.toLowerCase()}`}>
+                            <span className="note-icon">{NOTE_TYPES[note.type].icon}</span>
+                            <span className="note-content">{note.content}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="progress-bar">
                       <div 
                         className="progress-fill"
@@ -976,16 +1157,28 @@ const Roadmap = () => {
             projects[activeProject].status_updates.map(update => (
               <div key={update.id} className="status-update-card">
                 {userRole === 'editor' && (
-                  <button 
-                    className="edit-status-btn"
-                    onClick={() => {
-                      setSelectedStatus(update);
-                      setShowEditStatusModal(true);
-                    }}
-                    title="Edit Status"
-                  >
-                    ✏️
-                  </button>
+                  <div className="status-controls">
+                    <button 
+                      className="edit-status-btn"
+                      onClick={() => {
+                        setSelectedStatus(update);
+                        setShowEditStatusModal(true);
+                      }}
+                      title="Edit Status"
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      className="delete-status-btn"
+                      onClick={() => {
+                        setItemToDelete(update);
+                        setShowDeleteStatusModal(true);
+                      }}
+                      title="Delete Status"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 )}
                 <div className={`status-tag ${update.status}`}>
                   {update.status.replace('_', ' ')}
@@ -1057,6 +1250,29 @@ const Roadmap = () => {
           status={selectedStatus}
         />
       )}
+      
+      {/* Add confirmation modals */}
+      <ConfirmationModal
+        isOpen={showDeleteMilestoneModal}
+        onClose={() => {
+          setShowDeleteMilestoneModal(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={() => handleDeleteMilestone(itemToDelete)}
+        title="Delete Milestone"
+        message="Are you sure you want to delete this milestone? This action cannot be undone."
+      />
+
+      <ConfirmationModal
+        isOpen={showDeleteStatusModal}
+        onClose={() => {
+          setShowDeleteStatusModal(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={() => handleDeleteStatus(itemToDelete)}
+        title="Delete Status Update"
+        message="Are you sure you want to delete this status update? This action cannot be undone."
+      />
     </div>
   );
 };
