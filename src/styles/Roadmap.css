@@ -113,7 +113,7 @@
   padding: 120px 2rem 4rem;
   display: flex;
   flex-direction: column;
-  gap: 6rem;
+  gap: 2rem;
 }
 
 .road-line {
@@ -138,7 +138,7 @@
   align-items: center;
   min-height: 100px;
   transition: all 0.3s ease;
-  margin-bottom: 4rem;
+  margin-bottom: 2rem;
 }
 
 .milestone:first-child {
@@ -384,12 +384,17 @@
 }
 
 .goal-tile.achieved {
-  border-color: rgba(0, 255, 128, 0.2);
-  background: rgba(0, 255, 128, 0.05);
+  border-color: rgba(52, 199, 89, 0.4);
+  background: rgba(52, 199, 89, 0.15);
 }
 
 .goal-tile.achieved .goal-icon {
-  background: rgba(0, 255, 128, 0.1);
+  background: rgba(52, 199, 89, 0.25);
+  color: rgb(52, 199, 89);
+}
+
+.goal-tile.achieved .goal-label {
+  color: rgb(52, 199, 89);
 }
 
 /* Mobile adjustments */
@@ -454,6 +459,17 @@
   z-index: 10;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: opacity 0.3s ease;
+}
+
+.project-header.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.project-header.visible {
+  opacity: 1;
+  pointer-events: all;
 }
 
 .project-selector {
@@ -641,13 +657,14 @@
   gap: 0.5rem;
   opacity: 0;
   transition: opacity 0.2s ease;
+  z-index: 2;
 }
 
-.milestone.editable:hover .edit-controls {
+.milestone-content:hover .edit-controls {
   opacity: 1;
 }
 
-.edit-controls button {
+.edit-btn {
   width: 28px;
   height: 28px;
   padding: 0;
@@ -661,18 +678,10 @@
   transition: all 0.2s ease;
 }
 
-.edit-controls .edit-btn:hover {
+.edit-btn:hover {
   background: rgba(0, 170, 255, 0.1);
   border-color: rgba(0, 170, 255, 0.3);
-}
-
-.edit-controls .delete-btn:hover {
-  background: rgba(255, 59, 48, 0.1);
-  border-color: rgba(255, 59, 48, 0.3);
-}
-
-.edit-controls .move-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 /* Remove the old add-milestone-btn styles and add these new styles */
@@ -1067,17 +1076,36 @@
 }
 
 .edit-status-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
   cursor: pointer;
-  padding: 0.5rem;
   transition: all 0.2s ease;
+  opacity: 0;
+  z-index: 2;
+}
+
+.status-update-card {
+  position: relative;
+}
+
+.status-update-card:hover .edit-status-btn {
+  opacity: 1;
 }
 
 .edit-status-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
-  transform: scale(1.1);
+  background: rgba(0, 170, 255, 0.1);
+  border-color: rgba(0, 170, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .status-updates-list {

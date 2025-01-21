@@ -314,6 +314,159 @@ const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => 
   );
 };
 
+const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
+  const [title, setTitle] = useState(milestone.title);
+  const [description, setDescription] = useState(milestone.description);
+  const [date, setDate] = useState(milestone.date);
+  const [completion, setCompletion] = useState(milestone.completion);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({
+      ...milestone,
+      title,
+      description,
+      date,
+      completion: Number(completion)
+    });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Edit Milestone</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Date</label>
+            <input
+              type="text"
+              placeholder="e.g., March 2024"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Completion (%)</label>
+            <input
+              type="number"
+              value={completion}
+              onChange={(e) => setCompletion(e.target.value)}
+              min="0"
+              max="100"
+              required
+            />
+          </div>
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" className="submit-btn">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const EditStatusModal = ({ isOpen, onClose, onSave, status }) => {
+  const [title, setTitle] = useState(status.title);
+  const [description, setDescription] = useState(status.description);
+  const [date, setDate] = useState(status.date);
+  const [statusState, setStatusState] = useState(status.status);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({
+      ...status,
+      title,
+      description,
+      date,
+      status: statusState
+    });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Edit Status Update</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              value={statusState}
+              onChange={(e) => setStatusState(e.target.value)}
+            >
+              <option value="not_started">Not Started</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </div>
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" className="submit-btn">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const FadeInSection = ({ children }) => {
   const domRef = useRef();
   const [isVisible, setVisible] = useState(false);
@@ -346,20 +499,46 @@ const Roadmap = () => {
   const [activeProject, setActiveProject] = useState(0);
   const roadRef = useRef(null);
   const containerRef = useRef(null);
-  const [isEditMode] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showEditMilestoneModal, setShowEditMilestoneModal] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [projects, setProjects] = useState([]);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const width = useWindowDimensions();
   const timelineRef = useRef(null);
+  const [showEditStatusModal, setShowEditStatusModal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(null);
   
   // Add this to determine layout
   const isMobile = width <= 768;
   const isTablet = width <= 1200 && width > 768;
 
+  // Scroll handler with debounce for smoother performance
+  useEffect(() => {
+    const timeline = timelineRef.current;
+    if (!timeline) return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollTop = timeline.scrollTop;
+          setIsHeaderVisible(scrollTop < 50);  // Added small threshold for smoother transition
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    timeline.addEventListener('scroll', handleScroll);
+    return () => timeline.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Remove the duplicate scroll handler effect
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -395,19 +574,6 @@ const Roadmap = () => {
 
     fetchProjects();
   }, []);
-
-  // Update the scroll handling effect
-  useEffect(() => {
-    const timeline = timelineRef.current;
-    if (!timeline || !projects[activeProject]?.milestones?.length) return;
-
-    const handleScroll = () => {
-      // Only handle milestone visibility if needed
-    };
-
-    timeline.addEventListener('scroll', handleScroll);
-    return () => timeline.removeEventListener('scroll', handleScroll);
-  }, [activeProject, projects]);
 
   useEffect(() => {
     const getUserRole = async () => {
@@ -606,6 +772,71 @@ const Roadmap = () => {
     }
   };
 
+  const handleEditMilestone = async (updatedMilestone) => {
+    try {
+      const { error } = await supabase
+        .from('milestones')
+        .update({
+          title: updatedMilestone.title,
+          description: updatedMilestone.description,
+          date: updatedMilestone.date,
+          completion: updatedMilestone.completion
+        })
+        .eq('id', updatedMilestone.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProjects(prevProjects => {
+        const updatedProjects = [...prevProjects];
+        updatedProjects[activeProject] = {
+          ...updatedProjects[activeProject],
+          milestones: updatedProjects[activeProject].milestones.map(m =>
+            m.id === updatedMilestone.id ? updatedMilestone : m
+          )
+        };
+        return updatedProjects;
+      });
+
+      setShowEditMilestoneModal(false);
+      setSelectedMilestone(null);
+    } catch (error) {
+      console.error('Error updating milestone:', error);
+      alert('Failed to update milestone. Please try again.');
+    }
+  };
+
+  const handleEditStatus = async (updatedStatus) => {
+    try {
+      const currentUpdates = projects[activeProject].status_updates || [];
+      const updatedUpdates = currentUpdates.map(update =>
+        update.id === updatedStatus.id ? updatedStatus : update
+      );
+
+      const { error } = await supabase
+        .from('projects')
+        .update({ status_updates: updatedUpdates })
+        .eq('id', projects[activeProject].id);
+
+      if (error) throw error;
+
+      setProjects(prevProjects => {
+        const updatedProjects = [...prevProjects];
+        updatedProjects[activeProject] = {
+          ...updatedProjects[activeProject],
+          status_updates: updatedUpdates
+        };
+        return updatedProjects;
+      });
+
+      setShowEditStatusModal(false);
+      setSelectedStatus(null);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status. Please try again.');
+    }
+  };
+
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
 
@@ -638,7 +869,7 @@ const Roadmap = () => {
             </button>
           </div>
         </div>
-        <div className="project-header">
+        <div className={`project-header ${isHeaderVisible ? 'visible' : 'hidden'}`}>
           <div className="project-selector">
             <select 
               value={activeProject}
@@ -684,11 +915,18 @@ const Roadmap = () => {
                 <div className={`milestone ${index % 2 === 0 ? 'milestone-left' : 'milestone-right'}`}>
                   <div className="milestone-point"></div>
                   <div className="milestone-content">
-                    {isEditMode && (
+                    {userRole === 'editor' && (
                       <div className="edit-controls">
-                        <button className="edit-btn" title="Edit">✏️</button>
-                        <button className="delete-btn" title="Delete">🗑️</button>
-                        <button className="move-btn" title="Drag to reorder">↕️</button>
+                        <button 
+                          className="edit-btn" 
+                          title="Edit"
+                          onClick={() => {
+                            setSelectedMilestone(milestone);
+                            setShowEditMilestoneModal(true);
+                          }}
+                        >
+                          ✏️
+                        </button>
                       </div>
                     )}
                     <div className="milestone-header">
@@ -737,6 +975,18 @@ const Roadmap = () => {
           {projects[activeProject]?.status_updates?.length > 0 ? (
             projects[activeProject].status_updates.map(update => (
               <div key={update.id} className="status-update-card">
+                {userRole === 'editor' && (
+                  <button 
+                    className="edit-status-btn"
+                    onClick={() => {
+                      setSelectedStatus(update);
+                      setShowEditStatusModal(true);
+                    }}
+                    title="Edit Status"
+                  >
+                    ✏️
+                  </button>
+                )}
                 <div className={`status-tag ${update.status}`}>
                   {update.status.replace('_', ' ')}
                 </div>
@@ -783,6 +1033,28 @@ const Roadmap = () => {
           onClose={() => setShowStatusModal(false)}
           currentUpdates={projects[activeProject].status_updates || []}
           onSave={handleUpdateStatus}
+        />
+      )}
+      {showEditMilestoneModal && selectedMilestone && (
+        <EditMilestoneModal
+          isOpen={showEditMilestoneModal}
+          onClose={() => {
+            setShowEditMilestoneModal(false);
+            setSelectedMilestone(null);
+          }}
+          onSave={handleEditMilestone}
+          milestone={selectedMilestone}
+        />
+      )}
+      {showEditStatusModal && selectedStatus && (
+        <EditStatusModal
+          isOpen={showEditStatusModal}
+          onClose={() => {
+            setShowEditStatusModal(false);
+            setSelectedStatus(null);
+          }}
+          onSave={handleEditStatus}
+          status={selectedStatus}
         />
       )}
     </div>
