@@ -618,6 +618,7 @@ const Roadmap = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
   const [activeNotesMilestone, setActiveNotesMilestone] = useState(null);
+  const [user, setUser] = useState(null);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -644,7 +645,62 @@ const Roadmap = () => {
     return () => timeline.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Remove the duplicate scroll handler effect
+  // Add this effect to get the current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+    };
+    
+    getCurrentUser();
+  }, []);
+
+  // Update the migrateOldNotes function to handle cases where user might not be loaded yet
+  const migrateOldNotes = async (milestone) => {
+    try {
+      // Check if milestone has old notes format (as a JSON field)
+      if (milestone.notes && !Array.isArray(milestone.notes)) {
+        const oldNotes = Object.entries(milestone.notes).map(([type, content]) => ({
+          type,
+          content
+        }));
+
+        // Get current user if not already set
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        
+        // Insert old notes into new table
+        const { data, error } = await supabase
+          .from('milestone_notes')
+          .insert(
+            oldNotes.map(note => ({
+              milestone_id: milestone.id,
+              type: note.type,
+              content: note.content,
+              created_by: currentUser?.id || null
+            }))
+          )
+          .select();
+
+        if (error) throw error;
+
+        // Clear old notes from milestone
+        const { error: updateError } = await supabase
+          .from('milestones')
+          .update({ notes: null })
+          .eq('id', milestone.id);
+
+        if (updateError) throw updateError;
+
+        return data;
+      }
+      return milestone.milestone_notes || [];
+    } catch (error) {
+      console.error('Error migrating notes:', error);
+      return milestone.milestone_notes || [];
+    }
+  };
+
+  // Update the fetch projects effect
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -663,18 +719,22 @@ const Roadmap = () => {
 
         if (projectsError) throw projectsError;
 
-        // Sort milestones by position
-        const projectsWithSortedMilestones = projectsData.map(project => ({
-          ...project,
-          milestones: (project.milestones || [])
-            .sort((a, b) => a.position - b.position)
-            .map(milestone => ({
-              ...milestone,
-              notes: milestone.milestone_notes || []
-            }))
-        }));
+        // Process and migrate projects
+        const processedProjects = await Promise.all(
+          projectsData.map(async (project) => ({
+            ...project,
+            milestones: await Promise.all(
+              (project.milestones || [])
+                .sort((a, b) => a.position - b.position)
+                .map(async (milestone) => ({
+                  ...milestone,
+                  notes: await migrateOldNotes(milestone)
+                }))
+            )
+          }))
+        );
 
-        setProjects(projectsWithSortedMilestones);
+        setProjects(processedProjects);
       } catch (error) {
         console.error('Error fetching projects:', error);
         alert('Failed to fetch projects');
@@ -682,7 +742,7 @@ const Roadmap = () => {
     };
 
     fetchProjects();
-  }, []);
+  }, [user.id]); // Add user.id as dependency
 
   useEffect(() => {
     const getUserRole = async () => {
@@ -1003,8 +1063,12 @@ const Roadmap = () => {
     }
   };
 
+  // Update the handleAddNote function to handle cases where user might not be loaded yet
   const handleAddNote = async (milestoneId, noteData) => {
     try {
+      // Get current user if not already set
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('milestone_notes')
         .insert([
@@ -1012,7 +1076,7 @@ const Roadmap = () => {
             milestone_id: milestoneId,
             type: noteData.type,
             content: noteData.content,
-            created_by: user.id
+            created_by: currentUser?.id || null
           }
         ])
         .select();
