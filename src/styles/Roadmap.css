@@ -110,18 +110,18 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: 120px 2rem 4rem;
+  padding: 80px 2rem 4rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 0.75rem;
 }
 
 .road-line {
   position: absolute;
   width: 2px;
   left: 50%;
-  top: 120px;
-  bottom: 120px;
+  top: 0px;
+  bottom: 0px;
   background: linear-gradient(180deg, 
     rgba(0,170,255,0.1) 0%,
     rgba(0,170,255,0.3) 50%,
@@ -136,9 +136,9 @@
   width: 100%;
   display: flex;
   align-items: center;
-  min-height: 100px;
+  min-height: 60px;
   transition: all 0.3s ease;
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 .milestone:first-child {
@@ -164,11 +164,11 @@
 
 .milestone-content {
   position: relative;
-  width: calc(50% - 3rem);
+  width: calc(50% - 2rem);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 0.75rem;
   transition: transform 0.3s ease;
 }
 
@@ -198,7 +198,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.2rem;
 }
 
 .milestone-content h3 {
@@ -210,7 +210,7 @@
 }
 
 .milestone-content p {
-  margin: 0.5rem 0;
+  margin: 0.2rem 0;
   font-size: 0.9rem;
   color: #999;
   line-height: 1.5;
@@ -704,15 +704,59 @@
   transform: translateY(-1px);
 }
 
+/* Status update card styling */
 .status-update-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: 0.35rem 0.5rem;
-  padding-right: 4.5rem;
-  margin-bottom: 0.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-update-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.status-update-title {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+.status-icon {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-icon.completed {
+  color: rgb(52, 199, 89); /* Green */
+}
+
+.status-icon.in_progress {
+  color: rgb(255, 204, 0); /* Yellow */
+}
+
+.status-icon.not_started {
+  color: rgb(255, 59, 48); /* Red */
+}
+
+.status-update-card .edit-controls {
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.status-update-card:hover .edit-controls {
+  opacity: 1;
 }
 
 /* Remove the old add-milestone-btn styles and add these new styles */
@@ -1123,58 +1167,6 @@
 .edit-status-btn:hover {
   background: rgba(0, 170, 255, 0.1);
   border-color: rgba(0, 170, 255, 0.2);
-}
-
-.status-update-card {
-  position: relative;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: 0.35rem 0.5rem;
-  padding-right: 4.5rem;
-  margin-bottom: 0.25rem;
-  transition: all 0.2s ease;
-}
-
-.status-controls {
-  position: absolute;
-  top: 50%;
-  right: 0.5rem;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 0.25rem;
-  z-index: 2;
-}
-
-.edit-status-btn,
-.delete-status-btn {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.7rem;
-}
-
-.edit-status-btn:hover {
-  background: rgba(0, 170, 255, 0.1);
-  border-color: rgba(0, 170, 255, 0.2);
-}
-
-.delete-status-btn:hover {
-  background: rgba(255, 59, 48, 0.1);
-  border-color: rgba(255, 59, 48, 0.2);
-}
-
-.status-update-card:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.05);
 }
 
 .status-tag {
@@ -1779,10 +1771,10 @@ h1, h2, h3, p {
 
 /* Milestone notes styles */
 .milestone-notes {
-  margin: 0.75rem 0;
+  margin: 0.2rem 0;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.1rem;
 }
 
 .milestone .note-item {
