@@ -775,7 +775,7 @@
   transform: scale(1.1);
 }
 
-/* Modal styles */
+/* Modal styling */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -784,98 +784,93 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 2000;
+  justify-content: center;
+  z-index: 1000;
   backdrop-filter: blur(5px);
 }
 
-.modal {
+.modal-content {
   background: rgba(30, 30, 30, 0.95);
   border-radius: 16px;
   padding: 2rem;
   width: 90%;
-  max-width: 500px;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
-.modal h2 {
-  margin: 0 0 1.5rem 0;
-  color: #fff;
-  font-size: 1.4rem;
-  font-weight: 500;
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 0.8rem;
-  background: rgba(255, 255, 255, 0.05);
+.form-group textarea,
+.form-group select {
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
+  padding: 0.8rem;
   color: #fff;
   font-size: 1rem;
-  transition: all 0.2s ease;
 }
 
 .form-group textarea {
-  height: 100px;
+  min-height: 100px;
   resize: vertical;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #0af;
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .modal-actions button {
   padding: 0.8rem 1.5rem;
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.cancel-btn {
+.modal-actions button:first-child {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
-.cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.submit-btn {
+.modal-actions button:last-child {
   background: #0af;
   border: none;
   color: #fff;
 }
 
-.submit-btn:hover {
-  background: #00b3ff;
+.modal-actions button:hover {
   transform: translateY(-1px);
+}
+
+.modal-content h2 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #fff;
 }
 
 /* Add these new styles */
@@ -1701,14 +1696,20 @@ h1, h2, h3, p {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.4rem 0.6rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-  font-size: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  position: relative; /* For positioning the remove button */
 }
 
 .note-icon {
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  width: 24px;
+  height: 24px;
 }
 
 .note-content {
@@ -1716,29 +1717,10 @@ h1, h2, h3, p {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.remove-note-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0 0.2rem;
-  transition: color 0.2s ease;
-}
-
-.remove-note-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
 /* Note type styles */
-.note-item.note-blocker {
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid rgba(255, 59, 48, 0.2);
-}
-
-.note-item.note-dependency {
-  background: rgba(255, 204, 0, 0.1);
-  border: 1px solid rgba(255, 204, 0, 0.2);
+.note-item.note-info {
+  background: rgba(0, 170, 255, 0.1);
+  border: 1px solid rgba(0, 170, 255, 0.2);
 }
 
 .note-item.note-warning {
@@ -1746,9 +1728,53 @@ h1, h2, h3, p {
   border: 1px solid rgba(255, 149, 0, 0.2);
 }
 
-.note-item.note-info {
-  background: rgba(0, 170, 255, 0.1);
-  border: 1px solid rgba(0, 170, 255, 0.2);
+.note-item.note-blocker {
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.2);
+}
+
+.note-item.note-dependency {
+  background: rgba(88, 86, 214, 0.1);
+  border: 1px solid rgba(88, 86, 214, 0.2);
+}
+
+.remove-note-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0; /* Hidden by default */
+}
+
+.note-item:hover .remove-note-btn {
+  opacity: 1; /* Show on hover */
+}
+
+.remove-note-btn:hover {
+  color: rgba(255, 59, 48, 0.8); /* Red tint on hover */
+  transform: scale(1.1);
+}
+
+.notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.notes-header h4 {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
 }
 
 /* Milestone notes styles */

@@ -45,13 +45,6 @@ const TEAM_GOALS = {
   }
 };
 
-const NOTE_TYPES = {
-  BLOCKER: { icon: '🚫', label: 'Blocker' },
-  DEPENDENCY: { icon: '🔄', label: 'Dependency' },
-  WARNING: { icon: '⚠️', label: 'Warning' },
-  INFO: { icon: 'ℹ️', label: 'Info' }
-};
-
 const AddMilestoneModal = ({ isOpen, onClose, onAdd }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -321,54 +314,90 @@ const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => 
   );
 };
 
-const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
-  const [title, setTitle] = useState(milestone.title);
-  const [description, setDescription] = useState(milestone.description);
-  const [date, setDate] = useState(milestone.date);
-  const [completion, setCompletion] = useState(milestone.completion);
-  const [notes, setNotes] = useState(milestone.notes || []);
+const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone, user }) => {
+  const [title, setTitle] = useState(milestone?.title || '');
+  const [description, setDescription] = useState(milestone?.description || '');
+  const [date, setDate] = useState(milestone?.date || '');
+  const [completion, setCompletion] = useState(milestone?.completion || 0);
+  const [notes, setNotes] = useState(milestone?.notes || []);
   const [showAddNote, setShowAddNote] = useState(false);
-  const [newNote, setNewNote] = useState({ type: 'INFO', content: '' });
+  const [newNote, setNewNote] = useState({ type: 'info', content: '' });
 
-  const handleAddNote = () => {
-    if (newNote.content.trim()) {
-      setNotes([...notes, { ...newNote, id: Date.now() }]);
-      setNewNote({ type: 'INFO', content: '' });
+  useEffect(() => {
+    if (milestone) {
+      setTitle(milestone.title);
+      setDescription(milestone.description);
+      setDate(milestone.date);
+      setCompletion(milestone.completion);
+      setNotes(milestone.notes || []);
+    }
+  }, [milestone]);
+
+  const handleAddNote = async () => {
+    try {
+      const { data: newNoteData, error } = await supabase
+        .from('milestone_notes')
+        .insert({
+          milestone_id: milestone.id,
+          type: newNote.type,
+          content: newNote.content,
+          created_by: user.id
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      setNotes([...notes, newNoteData]);
       setShowAddNote(false);
+      setNewNote({ type: 'info', content: '' });
+    } catch (error) {
+      console.error('Error adding note:', error);
+      alert('Failed to add note: ' + error.message);
     }
   };
 
-  const handleRemoveNote = (noteId) => {
-    setNotes(notes.filter(note => note.id !== noteId));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSave = () => {
     onSave({
       ...milestone,
       title,
       description,
       date,
-      completion: Number(completion),
+      completion,
       notes
     });
-    onClose();
+  };
+
+  const handleDeleteNote = async (noteId, milestoneId) => {
+    try {
+      const { error } = await supabase
+        .from('milestone_notes')
+        .delete()
+        .match({ id: noteId });
+
+      if (error) throw error;
+
+      // Update local state
+      setNotes(notes.filter(note => note.id !== noteId));
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Failed to delete note: ' + error.message);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
-      <div className="modal">
+      <div className="modal-content">
         <h2>Edit Milestone</h2>
-        <form onSubmit={handleSubmit}>
+        <div className="modal-form">
           <div className="form-group">
             <label>Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              required
             />
           </div>
           <div className="form-group">
@@ -376,17 +405,14 @@ const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              required
             />
           </div>
           <div className="form-group">
             <label>Date</label>
             <input
               type="text"
-              placeholder="e.g., March 2024"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              required
             />
           </div>
           <div className="form-group">
@@ -394,15 +420,38 @@ const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
             <input
               type="number"
               value={completion}
-              onChange={(e) => setCompletion(e.target.value)}
+              onChange={(e) => setCompletion(Number(e.target.value))}
               min="0"
               max="100"
-              required
             />
           </div>
+
+          {/* Notes Section */}
           <div className="form-group">
-            <div className="notes-header">
-              <label>Notes</label>
+            <label>Notes</label>
+            <div className="notes-list">
+              {notes.map((note) => (
+                <div key={note.id} className={`note-item note-${note.type}`}>
+                  <span className="note-icon">
+                    {note.type === 'info' && '💡'}
+                    {note.type === 'warning' && '⚠️'}
+                    {note.type === 'blocker' && '🛑'}
+                    {note.type === 'dependency' && '🔄'}
+                  </span>
+                  <span className="note-content">{note.content}</span>
+                  <button
+                    type="button"
+                    className="remove-note-btn"
+                    onClick={() => handleDeleteNote(note.id, milestone.id)}
+                    title="Remove note"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            {!showAddNote ? (
               <button 
                 type="button" 
                 className="add-note-btn"
@@ -410,62 +459,46 @@ const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
               >
                 + Add Note
               </button>
-            </div>
-            {showAddNote && (
+            ) : (
               <div className="add-note-form">
                 <select
                   value={newNote.type}
                   onChange={(e) => setNewNote({ ...newNote, type: e.target.value })}
-                  className="note-type-select"
                 >
-                  {Object.entries(NOTE_TYPES).map(([key, { icon, label }]) => (
-                    <option key={key} value={key}>
-                      {icon} {label}
-                    </option>
-                  ))}
+                  <option value="info">Info</option>
+                  <option value="warning">Warning</option>
+                  <option value="blocker">Blocker</option>
+                  <option value="dependency">Dependency</option>
                 </select>
                 <input
                   type="text"
                   value={newNote.content}
                   onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                  placeholder="Enter note content..."
-                  className="note-input"
+                  placeholder="Note content"
                 />
                 <div className="note-actions">
-                  <button type="button" className="cancel-note-btn" onClick={() => setShowAddNote(false)}>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowAddNote(false)}
+                  >
                     Cancel
                   </button>
-                  <button type="button" className="add-note-submit-btn" onClick={handleAddNote}>
+                  <button 
+                    type="button"
+                    onClick={handleAddNote}
+                  >
                     Add
                   </button>
                 </div>
               </div>
             )}
-            <div className="notes-list">
-              {notes.map(note => (
-                <div key={note.id} className={`note-item note-${note.type.toLowerCase()}`}>
-                  <span className="note-icon">{NOTE_TYPES[note.type].icon}</span>
-                  <span className="note-content">{note.content}</span>
-                  <button
-                    type="button"
-                    className="remove-note-btn"
-                    onClick={() => handleRemoveNote(note.id)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
+
           <div className="modal-actions">
-            <button type="button" onClick={onClose} className="cancel-btn">
-              Cancel
-            </button>
-            <button type="submit" className="submit-btn">
-              Save Changes
-            </button>
+            <button type="button" onClick={onClose}>Cancel</button>
+            <button type="button" onClick={handleSave}>Save Changes</button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -619,6 +652,7 @@ const Roadmap = () => {
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
   const [activeNotesMilestone, setActiveNotesMilestone] = useState(null);
   const [user, setUser] = useState(null);
+  const [editingMilestoneId, setEditingMilestoneId] = useState(null);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -645,65 +679,11 @@ const Roadmap = () => {
     return () => timeline.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Add this effect to get the current user
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      setUser(currentUser);
-    };
-    
-    getCurrentUser();
-  }, []);
-
-  // Update the migrateOldNotes function to handle cases where user might not be loaded yet
-  const migrateOldNotes = async (milestone) => {
-    try {
-      // Check if milestone has old notes format (as a JSON field)
-      if (milestone.notes && !Array.isArray(milestone.notes)) {
-        const oldNotes = Object.entries(milestone.notes).map(([type, content]) => ({
-          type,
-          content
-        }));
-
-        // Get current user if not already set
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        
-        // Insert old notes into new table
-        const { data, error } = await supabase
-          .from('milestone_notes')
-          .insert(
-            oldNotes.map(note => ({
-              milestone_id: milestone.id,
-              type: note.type,
-              content: note.content,
-              created_by: currentUser?.id || null
-            }))
-          )
-          .select();
-
-        if (error) throw error;
-
-        // Clear old notes from milestone
-        const { error: updateError } = await supabase
-          .from('milestones')
-          .update({ notes: null })
-          .eq('id', milestone.id);
-
-        if (updateError) throw updateError;
-
-        return data;
-      }
-      return milestone.milestone_notes || [];
-    } catch (error) {
-      console.error('Error migrating notes:', error);
-      return milestone.milestone_notes || [];
-    }
-  };
-
-  // Update the fetch projects effect
+  // Remove the duplicate scroll handler effect
   useEffect(() => {
     const fetchProjects = async () => {
       try {
+        // Fetch projects with milestones and their notes
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select(`
@@ -719,22 +699,18 @@ const Roadmap = () => {
 
         if (projectsError) throw projectsError;
 
-        // Process and migrate projects
-        const processedProjects = await Promise.all(
-          projectsData.map(async (project) => ({
-            ...project,
-            milestones: await Promise.all(
-              (project.milestones || [])
-                .sort((a, b) => a.position - b.position)
-                .map(async (milestone) => ({
-                  ...milestone,
-                  notes: await migrateOldNotes(milestone)
-                }))
-            )
-          }))
-        );
+        // Sort milestones and include their notes
+        const projectsWithSortedMilestones = projectsData.map(project => ({
+          ...project,
+          milestones: (project.milestones || [])
+            .sort((a, b) => a.position - b.position)
+            .map(milestone => ({
+              ...milestone,
+              notes: milestone.milestone_notes || [] // Ensure notes are included
+            }))
+        }));
 
-        setProjects(processedProjects);
+        setProjects(projectsWithSortedMilestones);
       } catch (error) {
         console.error('Error fetching projects:', error);
         alert('Failed to fetch projects');
@@ -742,7 +718,7 @@ const Roadmap = () => {
     };
 
     fetchProjects();
-  }, [user.id]); // Add user.id as dependency
+  }, []);
 
   useEffect(() => {
     const getUserRole = async () => {
@@ -760,6 +736,27 @@ const Roadmap = () => {
       }
     };
     getUserRole();
+  }, []);
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        setUser(user);
+      } catch (error) {
+        console.error('Error getting user:', error);
+      }
+    };
+
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
@@ -1063,25 +1060,43 @@ const Roadmap = () => {
     }
   };
 
-  // Update the handleAddNote function to handle cases where user might not be loaded yet
   const handleAddNote = async (milestoneId, noteData) => {
     try {
-      // Get current user if not already set
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      const { data, error } = await supabase
-        .from('milestone_notes')
-        .insert([
-          {
-            milestone_id: milestoneId,
-            type: noteData.type,
-            content: noteData.content,
-            created_by: currentUser?.id || null
-          }
-        ])
-        .select();
+      if (!user?.id) {
+        console.error('No user ID found');
+        throw new Error('User not authenticated');
+      }
 
-      if (error) throw error;
+      console.log('Starting note creation with data:', {
+        milestone_id: milestoneId,
+        type: noteData.type,
+        content: noteData.content,
+        created_by: user.id
+      });
+
+      // First, insert the note into Supabase
+      const { data: newNote, error } = await supabase
+        .from('milestone_notes')
+        .insert({
+          milestone_id: milestoneId,
+          type: noteData.type,
+          content: noteData.content,
+          created_by: user.id
+        })
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      if (!newNote) {
+        console.error('No note data returned from insert');
+        throw new Error('No note data returned from Supabase');
+      }
+
+      console.log('Successfully created note in Supabase:', newNote);
 
       // Update local state
       const updatedProjects = [...projects];
@@ -1090,14 +1105,20 @@ const Roadmap = () => {
       );
       
       if (milestone) {
-        milestone.notes = [...(milestone.notes || []), data[0]];
+        console.log('Found milestone, updating with new note:', {
+          milestoneId: milestone.id,
+          currentNotes: milestone.notes?.length || 0
+        });
+        milestone.notes = [...(milestone.notes || []), newNote];
         setProjects(updatedProjects);
+      } else {
+        console.error('Could not find milestone:', milestoneId);
       }
 
       setShowAddNoteModal(false);
     } catch (error) {
       console.error('Error adding note:', error);
-      alert('Failed to add note');
+      alert('Failed to add note: ' + error.message);
     }
   };
 
@@ -1128,6 +1149,13 @@ const Roadmap = () => {
 
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
+
+  // Add this function with the other handlers
+  const handleEditModalClose = () => {
+    setShowEditMilestoneModal(false);
+    setEditingMilestoneId(null);
+    setSelectedMilestone(null);
+  };
 
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
@@ -1211,12 +1239,13 @@ const Roadmap = () => {
                           title="Edit"
                           onClick={() => {
                             setSelectedMilestone(milestone);
+                            setEditingMilestoneId(editingMilestoneId === milestone.id ? null : milestone.id);
                             setShowEditMilestoneModal(true);
                           }}
                         >
                           ✏️
                         </button>
-                        <button 
+                        <button
                           className="delete-btn" 
                           title="Delete"
                           onClick={() => {
@@ -1228,22 +1257,54 @@ const Roadmap = () => {
                         </button>
                       </div>
                     )}
+                    
                     <div className="milestone-header">
                       <h3>{milestone.title}</h3>
                       <span className="completion">{milestone.completion}%</span>
                     </div>
                     <div className="milestone-date">{milestone.date}</div>
                     <p>{milestone.description}</p>
-                    {milestone.notes && milestone.notes.length > 0 && (
-                      <div className="milestone-notes">
-                        {milestone.notes.map(note => (
-                          <div key={note.id} className={`note-item note-${note.type.toLowerCase()}`}>
-                            <span className="note-icon">{NOTE_TYPES[note.type].icon}</span>
+                    
+                    {/* Notes section - only show add button when editing */}
+                    <div className="milestone-notes">
+                      <div className="notes-header">
+                        <h4>Notes</h4>
+                        {editingMilestoneId === milestone.id && userRole === 'editor' && (
+                          <button 
+                            className="add-note-btn"
+                            onClick={() => {
+                              setActiveNotesMilestone(milestone.id);
+                              setShowAddNoteModal(true);
+                            }}
+                          >
+                            + Add Note
+                          </button>
+                        )}
+                      </div>
+                      <div className="notes-list">
+                        {milestone.notes?.map((note) => (
+                          <div key={note.id} className={`note-item note-${note.type}`}>
+                            <span className="note-icon">
+                              {note.type === 'info' && '💡'}
+                              {note.type === 'warning' && '⚠️'}
+                              {note.type === 'blocker' && '🛑'}
+                              {note.type === 'dependency' && '🔄'}
+                            </span>
                             <span className="note-content">{note.content}</span>
+                            {editingMilestoneId === milestone.id && userRole === 'editor' && (
+                              <button
+                                className="remove-note-btn"
+                                onClick={() => handleDeleteNote(note.id, milestone.id)}
+                                title="Remove note"
+                              >
+                                ×
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
-                    )}
+                    </div>
+
                     <div className="progress-bar">
                       <div 
                         className="progress-fill"
@@ -1359,12 +1420,10 @@ const Roadmap = () => {
       {showEditMilestoneModal && selectedMilestone && (
         <EditMilestoneModal
           isOpen={showEditMilestoneModal}
-          onClose={() => {
-            setShowEditMilestoneModal(false);
-            setSelectedMilestone(null);
-          }}
+          onClose={handleEditModalClose}
           onSave={handleEditMilestone}
           milestone={selectedMilestone}
+          user={user}
         />
       )}
       {showEditStatusModal && selectedStatus && (
@@ -1420,9 +1479,10 @@ const AddNoteModal = ({ isOpen, onClose, onAdd, milestoneId }) => {
   const [type, setType] = useState('info');
   const [content, setContent] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onAdd(milestoneId, { type, content });
+    console.log('Submitting note:', { type, content, milestoneId }); // Debug log
+    await onAdd(milestoneId, { type, content });
     setType('info');
     setContent('');
   };
