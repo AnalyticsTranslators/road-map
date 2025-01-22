@@ -616,6 +616,8 @@ const Roadmap = () => {
   const [showDeleteMilestoneModal, setShowDeleteMilestoneModal] = useState(false);
   const [showDeleteStatusModal, setShowDeleteStatusModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
+  const [activeNotesMilestone, setActiveNotesMilestone] = useState(null);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -651,12 +653,10 @@ const Roadmap = () => {
           .select(`
             *,
             milestones (
-              id,
-              title,
-              description,
-              date,
-              completion,
-              position
+              *,
+              milestone_notes (
+                *
+              )
             )
           `)
           .order('created_at');
@@ -666,7 +666,12 @@ const Roadmap = () => {
         // Sort milestones by position
         const projectsWithSortedMilestones = projectsData.map(project => ({
           ...project,
-          milestones: (project.milestones || []).sort((a, b) => a.position - b.position)
+          milestones: (project.milestones || [])
+            .sort((a, b) => a.position - b.position)
+            .map(milestone => ({
+              ...milestone,
+              notes: milestone.milestone_notes || []
+            }))
         }));
 
         setProjects(projectsWithSortedMilestones);
@@ -998,6 +1003,65 @@ const Roadmap = () => {
     }
   };
 
+  const handleAddNote = async (milestoneId, noteData) => {
+    try {
+      const { data, error } = await supabase
+        .from('milestone_notes')
+        .insert([
+          {
+            milestone_id: milestoneId,
+            type: noteData.type,
+            content: noteData.content,
+            created_by: user.id
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedProjects = [...projects];
+      const milestone = updatedProjects[activeProject].milestones.find(
+        m => m.id === milestoneId
+      );
+      
+      if (milestone) {
+        milestone.notes = [...(milestone.notes || []), data[0]];
+        setProjects(updatedProjects);
+      }
+
+      setShowAddNoteModal(false);
+    } catch (error) {
+      console.error('Error adding note:', error);
+      alert('Failed to add note');
+    }
+  };
+
+  const handleDeleteNote = async (noteId, milestoneId) => {
+    try {
+      const { error } = await supabase
+        .from('milestone_notes')
+        .delete()
+        .match({ id: noteId });
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedProjects = [...projects];
+      const milestone = updatedProjects[activeProject].milestones.find(
+        m => m.id === milestoneId
+      );
+      
+      if (milestone) {
+        milestone.notes = milestone.notes.filter(note => note.id !== noteId);
+        setProjects(updatedProjects);
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Failed to delete note');
+    }
+  };
+
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
 
@@ -1273,6 +1337,63 @@ const Roadmap = () => {
         title="Delete Status Update"
         message="Are you sure you want to delete this status update? This action cannot be undone."
       />
+
+      {/* Add Note Modal */}
+      <AddNoteModal
+        isOpen={showAddNoteModal}
+        onClose={() => {
+          setShowAddNoteModal(false);
+          setActiveNotesMilestone(null);
+        }}
+        onAdd={handleAddNote}
+        milestoneId={activeNotesMilestone}
+      />
+    </div>
+  );
+};
+
+const AddNoteModal = ({ isOpen, onClose, onAdd, milestoneId }) => {
+  const [type, setType] = useState('info');
+  const [content, setContent] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onAdd(milestoneId, { type, content });
+    setType('info');
+    setContent('');
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Add Note</h2>
+        <form onSubmit={handleSubmit}>
+          <select 
+            value={type} 
+            onChange={(e) => setType(e.target.value)}
+            className="note-type-select"
+          >
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="blocker">Blocker</option>
+            <option value="dependency">Dependency</option>
+          </select>
+          <input
+            type="text"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Note content"
+            className="note-input"
+            required
+          />
+          <div className="modal-actions">
+            <button type="button" onClick={onClose}>Cancel</button>
+            <button type="submit">Add Note</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
