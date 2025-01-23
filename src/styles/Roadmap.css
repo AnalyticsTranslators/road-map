@@ -591,6 +591,10 @@
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
   scroll-behavior: smooth;
+  /* Add these properties for better touch scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent vertical scrolling */
+  overscroll-behavior-y: none;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -1833,4 +1837,30 @@
 
 .modal .submit-btn {
   min-width: 120px;
+}
+
+/* Optional: Add subtle scroll indicators */
+.project-selector {
+  position: relative;
+}
+
+.project-selector::before,
+.project-selector::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.project-selector::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.2), transparent);
+}
+
+.project-selector::after {
+  right: 0;
+  background: linear-gradient(-90deg, rgba(0,0,0,0.2), transparent);
 }

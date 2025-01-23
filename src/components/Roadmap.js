@@ -1313,6 +1313,26 @@ const Roadmap = () => {
     setShowExportModal(true);
   };
 
+  // Add this near your other refs
+  const projectTilesRef = useRef(null);
+
+  // Add this function to handle wheel events
+  const handleWheel = (e) => {
+    if (projectTilesRef.current) {
+      e.preventDefault();
+      projectTilesRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
+  // Add this useEffect to set up and clean up the event listener
+  useEffect(() => {
+    const tilesElement = projectTilesRef.current;
+    if (tilesElement) {
+      tilesElement.addEventListener('wheel', handleWheel, { passive: false });
+      return () => tilesElement.removeEventListener('wheel', handleWheel);
+    }
+  }, []);
+
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
       {/* Left column - Goals */}
@@ -1363,7 +1383,7 @@ const Roadmap = () => {
         </div>
         <div className={`project-header ${isHeaderVisible ? 'visible' : 'hidden'}`}>
           <div className="project-selector">
-            <div className="project-tiles">
+            <div className="project-tiles" ref={projectTilesRef}>
               {projects.map((project, index) => (
                 <button
                   key={project.id}
