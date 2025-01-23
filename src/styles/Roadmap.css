@@ -576,80 +576,119 @@
 
 /* Update project selector styles */
 .project-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
   position: relative;
+  width: 300px; /* Fixed width for the dropdown */
+  margin: 0 auto 2rem;
 }
 
 .project-tiles {
-  display: flex;
-  gap: 1rem;
-  overflow-x: auto;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
   padding: 0.5rem;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  scroll-behavior: smooth;
-  /* Add these properties for better touch scrolling */
-  -webkit-overflow-scrolling: touch;
-  /* Prevent vertical scrolling */
-  overscroll-behavior-y: none;
-  cursor: grab;
-  user-select: none;
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-.project-tiles::-webkit-scrollbar {
   display: none;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
 }
 
-.project-tiles.dragging {
-  cursor: grabbing;
-  scroll-behavior: auto; /* Disable smooth scrolling while dragging */
+.project-selector.open .project-tiles {
+  display: block;
+  animation: dropdownAppear 0.2s ease-out;
 }
 
-.project-tiles.dragging .project-tile {
-  pointer-events: none; /* Prevent clicks while dragging */
+.selected-project {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.1), rgba(0, 170, 255, 0.05));
+  border: 1px solid rgba(0, 170, 255, 0.2);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
 }
 
-/* Re-enable pointer events for touch devices */
-@media (hover: none) and (pointer: coarse) {
-  .project-tiles.dragging .project-tile {
-    pointer-events: auto;
-  }
+.selected-project:hover {
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.15), rgba(0, 170, 255, 0.08));
+  border-color: rgba(0, 170, 255, 0.3);
+}
+
+.selected-project::after {
+  content: '▼';
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: transform 0.2s ease;
+}
+
+.project-selector.open .selected-project::after {
+  transform: rotate(180deg);
 }
 
 .project-tile {
-  min-width: 200px;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, rgba(0, 170, 255, 0.05), rgba(0, 170, 255, 0.02));
-  border: 1px solid rgba(0, 170, 255, 0.15);
-  border-radius: 12px;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
   color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.95rem;
   text-align: left;
-  position: relative;
-  font-weight: 400;
-}
-
-/* Active project tile */
-.project-tile.active {
-  background: linear-gradient(135deg, rgba(52, 199, 89, 0.15), rgba(52, 199, 89, 0.05));
-  border-color: rgba(52, 199, 89, 0.3);
-  box-shadow: 0 8px 24px rgba(52, 199, 89, 0.15);
-  color: #fff;
-  font-weight: 600;
-  transform: translateY(-2px) scale(1.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .project-tile:hover {
-  transform: translateY(-2px);
-  background: linear-gradient(135deg, rgba(0, 170, 255, 0.12), rgba(0, 170, 255, 0.04));
-  border-color: rgba(0, 170, 255, 0.25);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  background: rgba(0, 170, 255, 0.1);
+  color: #fff;
+}
+
+.project-tile.active {
+  background: rgba(0, 170, 255, 0.15);
+  color: #fff;
+  font-weight: 500;
+}
+
+@keyframes dropdownAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar styling for the dropdown */
+.project-tiles::-webkit-scrollbar {
+  width: 4px;
+}
+
+.project-tiles::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+}
+
+.project-tiles::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.project-tiles::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Project controls container */
@@ -742,7 +781,7 @@
   z-index: 1000;
   display: flex;
   align-items: center;
-  padding: 0 2rem;
+  padding: 0 1rem; /* Reduced padding */
 }
 
 .app-header h1 {
@@ -751,6 +790,8 @@
   background: linear-gradient(90deg, #fff, #999);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  margin: 0; /* Add this to remove any default margins */
+  padding-left: 1rem; /* Add specific padding to the title if needed */
 }
 
 /* Update sign-out button styles */
@@ -767,11 +808,12 @@
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .app-header {
-    padding: 1rem;
+    padding: 0 0.5rem; /* Even smaller padding for mobile */
   }
 
   .app-header h1 {
     font-size: 1.2rem;
+    padding-left: 0.5rem;
   }
 
   .sign-out-button {
@@ -1858,10 +1900,6 @@
 }
 
 /* Optional: Add subtle scroll indicators */
-.project-selector {
-  position: relative;
-}
-
 .project-selector::before,
 .project-selector::after {
   content: '';
@@ -1881,4 +1919,37 @@
 .project-selector::after {
   right: 0;
   background: linear-gradient(-90deg, rgba(0,0,0,0.2), transparent);
+}
+
+/* Adjust scrollbar styling */
+.project-tiles::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.project-tiles::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.project-tiles::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.project-tiles::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .project-tile {
+    flex: 0 0 calc(50% - 1rem); /* 2 tiles per row on medium screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .project-tile {
+    flex: 0 0 100%; /* 1 tile per row on mobile */
+  }
 }

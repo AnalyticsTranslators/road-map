@@ -722,9 +722,7 @@ const Roadmap = () => {
   const [expandedGroups, setExpandedGroups] = useState(['completed']); // Default to showing completed
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedProjectForExport, setSelectedProjectForExport] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -1316,31 +1314,22 @@ const Roadmap = () => {
     setShowExportModal(true);
   };
 
-  // Add this near your other refs
-  const projectTilesRef = useRef(null);
-
-  // Add these mouse event handlers
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setStartX(e.pageX - projectTilesRef.current.offsetLeft);
-    setScrollLeft(projectTilesRef.current.scrollLeft);
+  // Add this handler
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
   };
 
-  const handleMouseLeave = () => {
-    setIsDragging(false);
-  };
+  // Add this effect to close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.project-selector')) {
+        setIsDropdownOpen(false);
+      }
+    };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const x = e.pageX - projectTilesRef.current.offsetLeft;
-    const walk = (x - startX) * 2; // Multiply by 2 for faster scrolling
-    projectTilesRef.current.scrollLeft = scrollLeft - walk;
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
@@ -1391,20 +1380,27 @@ const Roadmap = () => {
           </div>
         </div>
         <div className={`project-header ${isHeaderVisible ? 'visible' : 'hidden'}`}>
-          <div className="project-selector">
-            <div 
-              className={`project-tiles ${isDragging ? 'dragging' : ''}`}
-              ref={projectTilesRef}
-              onMouseDown={handleMouseDown}
-              onMouseLeave={handleMouseLeave}
-              onMouseUp={handleMouseUp}
-              onMouseMove={handleMouseMove}
+          <div className={`project-selector ${isDropdownOpen ? 'open' : ''}`}>
+            <button 
+              className="selected-project" 
+              onClick={toggleDropdown}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                handleProjectContextMenu(e, projects[activeProject]);
+              }}
+              title="Right-click to export as PDF"
             >
+              {projects[activeProject]?.name || 'Select Project'}
+            </button>
+            <div className="project-tiles">
               {projects.map((project, index) => (
                 <button
                   key={project.id}
                   className={`project-tile ${index === activeProject ? 'active' : ''}`}
-                  onClick={() => handleProjectChange(index)}
+                  onClick={() => {
+                    handleProjectChange(index);
+                    setIsDropdownOpen(false);
+                  }}
                   onContextMenu={(e) => handleProjectContextMenu(e, project)}
                   title="Right-click to export as PDF"
                 >
