@@ -238,25 +238,21 @@ const EditSummaryModal = ({ isOpen, onClose, currentSummary, onSave }) => {
   );
 };
 
-const StatusModal = ({ isOpen, onClose, onSave, status = null }) => {
-  const [title, setTitle] = useState(status?.title || '');
-  const [currentStatus, setCurrentStatus] = useState(status?.status || 'not_started');
-
-  useEffect(() => {
-    if (status) {
-      setTitle(status.title);
-      setCurrentStatus(status.status);
-    }
-  }, [status]);
+const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => {
+  const [newUpdate, setNewUpdate] = useState({
+    title: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    status: 'not_started'
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({
-      ...(status || {}), // Keep existing properties if editing
-      title,
-      status: currentStatus,
-      id: status?.id || Date.now()
-    });
+    const update = {
+      ...newUpdate,
+      id: Date.now()
+    };
+    onSave([...(currentUpdates || []), update]);
     onClose();
   };
 
@@ -264,47 +260,53 @@ const StatusModal = ({ isOpen, onClose, onSave, status = null }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>{status ? 'Edit Status Update' : 'Add Status Update'}</h2>
+      <div className="modal">
+        <h2>Add Status Update</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Title</label>
             <input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={newUpdate.title}
+              onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              value={newUpdate.description}
+              onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
               required
             />
           </div>
           <div className="form-group">
             <label>Status</label>
-            <div className="status-options">
-              <button
-                type="button"
-                className={`status-option ${currentStatus === 'completed' ? 'selected' : ''}`}
-                onClick={() => setCurrentStatus('completed')}
-              >
-                ✅ Completed
-              </button>
-              <button
-                type="button"
-                className={`status-option ${currentStatus === 'in_progress' ? 'selected' : ''}`}
-                onClick={() => setCurrentStatus('in_progress')}
-              >
-                ⏳ In Progress
-              </button>
-              <button
-                type="button"
-                className={`status-option ${currentStatus === 'not_started' ? 'selected' : ''}`}
-                onClick={() => setCurrentStatus('not_started')}
-              >
-                ❌ Not Started
-              </button>
-            </div>
+            <select
+              value={newUpdate.status}
+              onChange={(e) => setNewUpdate({ ...newUpdate, status: e.target.value })}
+            >
+              <option value="not_started">Not Started</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Date</label>
+            <input
+              type="date"
+              value={newUpdate.date}
+              onChange={(e) => setNewUpdate({ ...newUpdate, date: e.target.value })}
+              required
+            />
           </div>
           <div className="modal-actions">
-            <button type="button" onClick={onClose}>Cancel</button>
-            <button type="submit">{status ? 'Save Changes' : 'Add Status'}</button>
+            <button type="button" onClick={onClose} className="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" className="submit-btn">
+              Add Update
+            </button>
           </div>
         </form>
       </div>
@@ -497,6 +499,82 @@ const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone, user }) => {
             <button type="button" onClick={handleSave}>Save Changes</button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const EditStatusModal = ({ isOpen, onClose, onSave, status }) => {
+  const [title, setTitle] = useState(status.title);
+  const [description, setDescription] = useState(status.description);
+  const [date, setDate] = useState(status.date);
+  const [statusState, setStatusState] = useState(status.status);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({
+      ...status,
+      title,
+      description,
+      date,
+      status: statusState
+    });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Edit Status Update</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              value={statusState}
+              onChange={(e) => setStatusState(e.target.value)}
+            >
+              <option value="not_started">Not Started</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </div>
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" className="submit-btn">
+              Save Changes
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -1267,37 +1345,37 @@ const Roadmap = () => {
           {projects[activeProject]?.status_updates?.length > 0 ? (
             projects[activeProject].status_updates.map(update => (
               <div key={update.id} className="status-update-card">
-                <span className="status-update-title">{update.title}</span>
-                <div className="status-controls">
-                  <span className={`status-icon ${update.status}`}>
-                    {update.status === 'completed' && '✅'}
-                    {update.status === 'in_progress' && '⏳'}
-                    {update.status === 'not_started' && '❌'}
-                  </span>
-                  {userRole === 'editor' && (
-                    <div className="edit-controls">
-                      <button 
-                        className="edit-btn"
-                        onClick={() => {
-                          setSelectedStatus(update);
-                          setShowEditStatusModal(true);
-                        }}
-                        title="Edit Status"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        className="delete-btn"
-                        onClick={() => {
-                          setItemToDelete(update);
-                          setShowDeleteStatusModal(true);
-                        }}
-                        title="Delete Status"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  )}
+                {userRole === 'editor' && (
+                  <div className="edit-controls">
+                    <button 
+                      className="edit-btn"
+                      onClick={() => {
+                        setSelectedStatus(update);
+                        setShowEditStatusModal(true);
+                      }}
+                      title="Edit Status"
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      className="delete-btn"
+                      onClick={() => {
+                        setItemToDelete(update);
+                        setShowDeleteStatusModal(true);
+                      }}
+                      title="Delete Status"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                )}
+                <div className={`status-tag ${update.status}`}>
+                  {update.status.replace('_', ' ')}
+                </div>
+                <div className="update-content">
+                  <h3>{update.title}</h3>
+                  <p>{update.description}</p>
+                  <time>{update.date}</time>
                 </div>
               </div>
             ))
@@ -1332,9 +1410,10 @@ const Roadmap = () => {
         />
       )}
       {showStatusModal && (
-        <StatusModal
+        <StatusUpdateModal
           isOpen={showStatusModal}
           onClose={() => setShowStatusModal(false)}
+          currentUpdates={projects[activeProject].status_updates || []}
           onSave={handleUpdateStatus}
         />
       )}
@@ -1348,7 +1427,7 @@ const Roadmap = () => {
         />
       )}
       {showEditStatusModal && selectedStatus && (
-        <StatusModal
+        <EditStatusModal
           isOpen={showEditStatusModal}
           onClose={() => {
             setShowEditStatusModal(false);
