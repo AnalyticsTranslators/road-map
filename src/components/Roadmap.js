@@ -55,7 +55,7 @@ const NOTE_TYPES = {
 const STATUS_TYPES = {
   'Completed': { icon: '✅', label: 'Completed' },
   'In Progress': { icon: '🔄', label: 'In Progress' },
-  'Not Started': { icon: '⭕', label: 'Not Started' }
+  'Not Started': { icon: '⛔', label: 'Not Started' }
 };
 
 const PROJECT_KPIS = {
@@ -156,7 +156,8 @@ const AddProjectModal = ({ isOpen, onClose, onAdd }) => {
   const [projectData, setProjectData] = useState({
     name: '',
     summary: '',
-    kpis: []
+    kpis: [],
+    goals: []
   });
 
   const toggleKPI = (kpiId) => {
@@ -165,6 +166,15 @@ const AddProjectModal = ({ isOpen, onClose, onAdd }) => {
       kpis: prev.kpis.includes(kpiId)
         ? prev.kpis.filter(id => id !== kpiId)
         : [...prev.kpis, kpiId]
+    }));
+  };
+
+  const toggleGoal = (goal) => {
+    setProjectData(prev => ({
+      ...prev,
+      goals: prev.goals.includes(goal)
+        ? prev.goals.filter(g => g.id !== goal.id)
+        : [...prev.goals, goal]
     }));
   };
 
@@ -197,6 +207,22 @@ const AddProjectModal = ({ isOpen, onClose, onAdd }) => {
               onChange={(e) => setProjectData({ ...projectData, summary: e.target.value })}
               required
             />
+          </div>
+          <div className="form-group">
+            <label>Team Goals</label>
+            <div className="goals-select">
+              {Object.values(TEAM_GOALS).map(goal => (
+                <button
+                  key={goal.id}
+                  type="button"
+                  className={`goal-select-btn ${projectData.goals.includes(goal) ? 'selected' : ''}`}
+                  onClick={() => toggleGoal(goal)}
+                >
+                  <span className="goal-select-icon">{goal.icon}</span>
+                  <span className="goal-select-text">{goal.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="form-group">
             <label>Project KPIs</label>
@@ -691,6 +717,7 @@ const Roadmap = () => {
   const [user, setUser] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showEditProjectModal, setShowEditProjectModal] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState(['completed']); // Default to showing completed
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -915,7 +942,8 @@ const Roadmap = () => {
         .insert([{
           name: projectData.name,
           summary: projectData.summary,
-          kpis: projectData.kpis
+          kpis: projectData.kpis,
+          goals: projectData.goals
         }])
         .select();
 
@@ -1263,6 +1291,17 @@ const Roadmap = () => {
     }
   };
 
+  // Add this function to handle expanding/collapsing groups
+  const toggleStatusGroup = (groupName) => {
+    setExpandedGroups(prev => {
+      if (prev.includes(groupName)) {
+        return prev.filter(g => g !== groupName);
+      } else {
+        return [...prev, groupName];
+      }
+    });
+  };
+
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
       {/* Left column - Goals */}
@@ -1286,46 +1325,44 @@ const Roadmap = () => {
       <div className="timeline-column" ref={timelineRef}>
         <div className="app-header">
           <h1>GM Insights Roadmap</h1>
-          <div className="header-controls">
-            <button onClick={handleSignOut} className="sign-out-button" title="Sign Out">
-              <span className="sign-out-icon">🚪</span>
-            </button>
-          </div>
+          {userRole === 'editor' && (
+            <div className="project-controls">
+              <button 
+                className="edit-project-btn"
+                onClick={() => {
+                  setSelectedProject(projects[activeProject]);
+                  setShowEditProjectModal(true);
+                }}
+                title="Edit Project"
+              >
+                <span className="button-icon">✎</span>
+              </button>
+              <button 
+                className="add-project-btn"
+                onClick={() => setShowProjectModal(true)}
+                title="Add New Project"
+              >
+                <span className="button-icon">+</span>
+              </button>
+            </div>
+          )}
+          <button className="sign-out-button" onClick={handleSignOut} title="Sign Out">
+            <span className="sign-out-icon">🚪</span>
+          </button>
         </div>
         <div className={`project-header ${isHeaderVisible ? 'visible' : 'hidden'}`}>
           <div className="project-selector">
-            <select 
-              value={activeProject}
-              onChange={(e) => handleProjectChange(Number(e.target.value))}
-              className="project-dropdown"
-            >
+            <div className="project-tiles">
               {projects.map((project, index) => (
-                <option key={project.id} value={index}>
+                <button
+                  key={project.id}
+                  className={`project-tile ${index === activeProject ? 'active' : ''}`}
+                  onClick={() => handleProjectChange(index)}
+                >
                   {project.name}
-                </option>
+                </button>
               ))}
-            </select>
-            {userRole === 'editor' && (
-              <>
-                <button 
-                  className="edit-project-btn"
-                  onClick={() => {
-                    setSelectedProject(projects[activeProject]);
-                    setShowEditProjectModal(true);
-                  }}
-                  title="Edit Project"
-                >
-                  ✏️
-                </button>
-                <button 
-                  className="add-project-btn"
-                  onClick={() => setShowProjectModal(true)}
-                  title="Add New Project"
-                >
-                  + New Project
-                </button>
-              </>
-            )}
+            </div>
           </div>
           
           {/* KPIs section moved outside and above project summary */}
@@ -1446,40 +1483,163 @@ const Roadmap = () => {
         </div>
         <div className="status-updates-list">
           {projects[activeProject]?.status_updates?.length > 0 ? (
-            projects[activeProject].status_updates.map(update => (
-              <div key={update.id} className="status-update-card">
-                {userRole === 'editor' && (
-                  <div className="edit-controls">
-                    <button 
-                      className="edit-btn"
-                      onClick={() => {
-                        setSelectedStatus(update);
-                        setShowEditStatusModal(true);
-                      }}
-                      title="Edit Status"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      className="delete-btn"
-                      onClick={() => {
-                        setItemToDelete(update);
-                        setShowDeleteStatusModal(true);
-                      }}
-                      title="Delete Status"
-                    >
-                      🗑️
-                    </button>
+            <div className="status-groups">
+              {/* Completed Updates */}
+              <div className={`status-group ${expandedGroups.includes('completed') ? 'expanded' : ''}`}>
+                <button 
+                  className="status-group-header completed"
+                  onClick={() => toggleStatusGroup('completed')}
+                >
+                  <div className="status-group-info">
+                    <span className="status-icon">✅</span>
+                    <span className="status-label">Completed</span>
+                    <span className="status-count">
+                      {projects[activeProject].status_updates.filter(u => u.status_type === 'Completed').length}
+                    </span>
                   </div>
-                )}
-                <div className={`status-tag ${(update.status_type || 'Not Started').toLowerCase().replace(' ', '-')}`}>
-                  {STATUS_TYPES[update.status_type || 'Not Started']?.icon} {STATUS_TYPES[update.status_type || 'Not Started']?.label}
-                </div>
-                <div className="update-content">
-                  <p>{update.content}</p>
+                  <span className="expand-icon">▼</span>
+                </button>
+                <div className="status-group-content">
+                  {projects[activeProject].status_updates
+                    .filter(update => update.status_type === 'Completed')
+                    .map(update => (
+                      <div key={update.id} className="status-update-card">
+                        <div className="update-content">
+                          <p>{update.content}</p>
+                          {userRole === 'editor' && (
+                            <div className="edit-controls">
+                              <button 
+                                className="edit-btn"
+                                onClick={() => {
+                                  setSelectedStatus(update);
+                                  setShowEditStatusModal(true);
+                                }}
+                                title="Edit Status"
+                              >
+                                ✏️
+                              </button>
+                              <button 
+                                className="delete-btn"
+                                onClick={() => {
+                                  setItemToDelete(update);
+                                  setShowDeleteStatusModal(true);
+                                }}
+                                title="Delete Status"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                 </div>
               </div>
-            ))
+
+              {/* In Progress Updates */}
+              <div className={`status-group ${expandedGroups.includes('in-progress') ? 'expanded' : ''}`}>
+                <button 
+                  className="status-group-header in-progress"
+                  onClick={() => toggleStatusGroup('in-progress')}
+                >
+                  <div className="status-group-info">
+                    <span className="status-icon">🔄</span>
+                    <span className="status-label">In Progress</span>
+                    <span className="status-count">
+                      {projects[activeProject].status_updates.filter(u => u.status_type === 'In Progress').length}
+                    </span>
+                  </div>
+                  <span className="expand-icon">▼</span>
+                </button>
+                <div className="status-group-content">
+                  {projects[activeProject].status_updates
+                    .filter(update => update.status_type === 'In Progress')
+                    .map(update => (
+                      <div key={update.id} className="status-update-card">
+                        <div className="update-content">
+                          <p>{update.content}</p>
+                          {userRole === 'editor' && (
+                            <div className="edit-controls">
+                              <button 
+                                className="edit-btn"
+                                onClick={() => {
+                                  setSelectedStatus(update);
+                                  setShowEditStatusModal(true);
+                                }}
+                                title="Edit Status"
+                              >
+                                ✏️
+                              </button>
+                              <button 
+                                className="delete-btn"
+                                onClick={() => {
+                                  setItemToDelete(update);
+                                  setShowDeleteStatusModal(true);
+                                }}
+                                title="Delete Status"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Not Started Updates */}
+              <div className={`status-group ${expandedGroups.includes('not-started') ? 'expanded' : ''}`}>
+                <button 
+                  className="status-group-header not-started"
+                  onClick={() => toggleStatusGroup('not-started')}
+                >
+                  <div className="status-group-info">
+                    <span className="status-icon">⛔</span>
+                    <span className="status-label">Not Started</span>
+                    <span className="status-count">
+                      {projects[activeProject].status_updates.filter(u => u.status_type === 'Not Started').length}
+                    </span>
+                  </div>
+                  <span className="expand-icon">▼</span>
+                </button>
+                <div className="status-group-content">
+                  {projects[activeProject].status_updates
+                    .filter(update => update.status_type === 'Not Started')
+                    .map(update => (
+                      <div key={update.id} className="status-update-card">
+                        <div className="update-content">
+                          <p>{update.content}</p>
+                          {userRole === 'editor' && (
+                            <div className="edit-controls">
+                              <button 
+                                className="edit-btn"
+                                onClick={() => {
+                                  setSelectedStatus(update);
+                                  setShowEditStatusModal(true);
+                                }}
+                                title="Edit Status"
+                              >
+                                ✏️
+                              </button>
+                              <button 
+                                className="delete-btn"
+                                onClick={() => {
+                                  setItemToDelete(update);
+                                  setShowDeleteStatusModal(true);
+                                }}
+                                title="Delete Status"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="no-updates">
               <p>No status updates yet</p>

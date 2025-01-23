@@ -1,23 +1,112 @@
 .roadmap-container {
   display: grid;
-  grid-template-columns: 20% 60% 20%;
-  min-height: 100vh;
+  grid-template-columns: 15% 65% 20%;
+  height: 100vh; /* Full viewport height */
   background: linear-gradient(180deg, #0A0A0A 0%, #000000 100%);
   color: #fff;
   padding-top: 80px;
-  gap: 1px; /* Creates subtle separation between columns */
-  background-color: rgba(255, 255, 255, 0.05); /* For gap color */
+  gap: 1px;
+  background-color: rgba(255, 255, 255, 0.05);
+  overflow: hidden; /* Prevent container from scrolling */
+  position: fixed; /* Keep container fixed */
+  width: 100%;
+}
+
+/* Team goals column */
+.project-goals {
+  position: fixed;
+  left: 0;
+  top: 80px; /* Account for header height */
+  bottom: 0;
+  width: 15%;
+  padding: 0.8rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* Middle roadmap section */
+.timeline-column {
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+  padding: 2rem 4rem 2rem 2rem; /* Add more padding on the right */
+  width: 100%;
+  position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  box-sizing: border-box;
+  margin: 0; /* Remove margin */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.timeline-column::-webkit-scrollbar {
+  display: none;
+}
+
+/* Status updates column */
+.status-updates {
+  position: fixed;
+  right: 0;
+  top: 80px;
+  bottom: 0;
+  width: 20%;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.95);
+}
+
+/* Scrollbar styling for all scrollable sections */
+.timeline-column::-webkit-scrollbar,
+.project-goals::-webkit-scrollbar,
+.status-updates::-webkit-scrollbar {
+  width: 6px;
+}
+
+.timeline-column::-webkit-scrollbar-track,
+.project-goals::-webkit-scrollbar-track,
+.status-updates::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-column::-webkit-scrollbar-thumb,
+.project-goals::-webkit-scrollbar-thumb,
+.status-updates::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 /* Tablet breakpoint */
-.roadmap-container.tablet {
-  grid-template-columns: 25% 50% 25%;
+@media (max-width: 1024px) {
+  .roadmap-container {
+    grid-template-columns: 20% 55% 25%;
+  }
+
+  .project-goals {
+    width: 20%;
+  }
+
+  .status-updates {
+    width: 25%;
+  }
 }
 
 /* Mobile breakpoint */
-.roadmap-container.mobile {
-  grid-template-columns: 1fr;
-  padding-top: 60px;
+@media (max-width: 768px) {
+  .roadmap-container {
+    position: relative;
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+
+  .project-goals,
+  .timeline-column,
+  .status-updates {
+    position: relative;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
 }
 
 .main-content {
@@ -108,12 +197,13 @@
 .road {
   position: relative;
   width: 100%;
-  max-width: 800px;
+  max-width: calc(65vw - 8rem); /* Reduce max-width to create space */
   margin: 0 auto;
   padding: 80px 2rem 4rem;
   display: flex;
   flex-direction: column;
-  gap: rem;
+  gap: 2rem;
+  margin-right: 4rem; /* Add right margin for spacing */
 }
 
 .road-line {
@@ -170,6 +260,7 @@
   border-radius: 12px;
   padding: 1rem;
   transition: transform 0.3s ease;
+  max-width: calc(100% - 2rem); /* Ensure content doesn't get too wide */
 }
 
 /* Left side milestones */
@@ -306,17 +397,6 @@
   font-weight: 500;
 }
 
-.project-goals {
-  position: fixed;
-  left: 0;
-  top: 60%;
-  transform: translateY(-50%);
-  width: 250px;
-  padding: 1rem;
-  box-sizing: border-box;
-  z-index: 100;
-}
-
 .project-goals h2 {
   font-size: 1.2rem;
   font-weight: 500;
@@ -447,104 +527,187 @@
 
 /* Project header with gradient overlay */
 .project-header {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto 2rem auto;
+  background: linear-gradient(to bottom, 
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
   padding: 2rem;
-  box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 10;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: opacity 0.3s ease;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  position: relative;
 }
 
-.project-header.hidden {
-  opacity: 0;
-  pointer-events: none;
+.project-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
 }
 
-.project-header.visible {
-  opacity: 1;
-  pointer-events: all;
+/* Add animation for project selection */
+@keyframes projectSelect {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.03);
+  }
+  100% {
+    transform: translateY(-2px) scale(1.02);
+  }
 }
 
+.project-tile.active {
+  animation: projectSelect 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Update project selector styles */
 .project-selector {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  width: 100%;
-}
-
-.project-summary {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 1.5rem 2rem;
-  margin-top: 1.5rem;
-  position: relative;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.9);
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .project-header {
-    padding: 1.5rem;
-    margin: 0 1rem 2rem 1rem;
-    width: calc(100% - 2rem);
-  }
-  
-  .project-summary {
-    padding: 1.2rem;
-  }
-}
-
-/* Timeline container */
-.timeline-column {
-  padding: 0;
-  height: calc(100vh - 80px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  width: 100%;
-  position: relative;
-  display: flex;
   flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.project-tiles {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 0.5rem;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.project-tiles::-webkit-scrollbar {
+  display: none;
+}
+
+.project-tile {
+  min-width: 200px;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.05), rgba(0, 170, 255, 0.02));
+  border: 1px solid rgba(0, 170, 255, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.95rem;
+  text-align: left;
+  position: relative;
+  font-weight: 400;
+}
+
+/* Active project tile */
+.project-tile.active {
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.15), rgba(52, 199, 89, 0.05));
+  border-color: rgba(52, 199, 89, 0.3);
+  box-shadow: 0 8px 24px rgba(52, 199, 89, 0.15);
+  color: #fff;
+  font-weight: 600;
+  transform: translateY(-2px) scale(1.02);
+}
+
+.project-tile:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.12), rgba(0, 170, 255, 0.04));
+  border-color: rgba(0, 170, 255, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Project controls container */
+.project-controls {
+  position: fixed;
+  top: 1.5rem;
+  right: 6rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 1001;
+}
+
+/* Style both buttons consistently */
+.edit-project-btn,
+.add-project-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  background: rgba(0, 170, 255, 0.1);
+  border: 1px solid rgba(0, 170, 255, 0.3);
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.2rem;
 }
 
-/* Responsive adjustments */
-@media (max-width: 1400px) {
-  .project-header,
-  .project-summary {
-    max-width: 700px;
-  }
+.edit-project-btn:hover,
+.add-project-btn:hover {
+  background: rgba(0, 170, 255, 0.2);
+  transform: translateY(-1px);
+  border-color: rgba(0, 170, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 170, 255, 0.2);
 }
 
-@media (max-width: 1200px) {
-  .project-header,
-  .project-summary {
-    max-width: 600px;
-  }
+/* Sign out button */
+.sign-out-button {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: 6px;
+  color: #ff4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1001;
 }
 
+/* Mobile adjustments */
 @media (max-width: 768px) {
-  .project-header {
-    padding: 0 1rem;
+  .project-controls {
+    top: 1rem;
+    right: 4rem;
   }
-  
-  .project-summary {
-    margin: 1rem 1rem 0;
-    padding: 1.2rem;
+
+  .edit-project-btn,
+  .add-project-btn,
+  .sign-out-button {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .sign-out-button {
+    top: 1rem;
+    right: 1rem;
   }
 }
 
-/* Update the header styles */
+/* Update existing app-header styles */
 .app-header {
   position: fixed;
   top: 0;
@@ -569,25 +732,6 @@
 }
 
 /* Update sign-out button styles */
-.sign-out-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  background: transparent;
-  border: 1px solid rgba(255, 59, 48, 0.3);
-  border-radius: 6px;
-  color: #ff4444;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 1001;
-}
-
 .sign-out-button:hover {
   background: rgba(255, 59, 48, 0.1);
   transform: translateY(-1px);
@@ -705,14 +849,13 @@
 }
 
 .status-update-card {
-  position: relative;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: 0.35rem 0.5rem;
-  padding-right: 4.5rem;
-  margin-bottom: 0.25rem;
-  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* Remove the old add-milestone-btn styles and add these new styles */
@@ -775,7 +918,37 @@
   transform: scale(1.1);
 }
 
-/* Modal styles */
+/* Update modal styles to support scrolling */
+.modal {
+  background: rgba(0, 0, 0, 0.95);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh; /* Limit height to 90% of viewport */
+  overflow-y: auto; /* Enable vertical scrolling */
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* Style the scrollbar for webkit browsers */
+.modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+/* Update modal overlay to center content */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -783,21 +956,22 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 2000;
-  backdrop-filter: blur(5px);
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
 }
 
-.modal {
-  background: rgba(30, 30, 30, 0.95);
-  border-radius: 16px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+/* Ensure form content doesn't cause horizontal scrolling */
+.modal form {
+  width: 100%;
+}
+
+/* Add some spacing between form groups */
+.form-group {
+  margin-bottom: 1.5rem;
 }
 
 .modal h2 {
@@ -805,10 +979,6 @@
   color: #fff;
   font-size: 1.4rem;
   font-weight: 500;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
 }
 
 .form-group label {
@@ -925,10 +1095,14 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.5rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
 }
 
 .goal-checkbox input {
@@ -1092,14 +1266,12 @@
 }
 
 .project-controls {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  position: fixed;
+  top: 1.5rem;
+  right: 6rem;
   display: flex;
   gap: 0.5rem;
-  opacity: 0;
-  transition: all 0.2s ease;
+  z-index: 1001;
 }
 
 .project-summary:hover .project-controls {
@@ -1132,727 +1304,19 @@
 
 .status-update-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: 0.35rem 0.5rem;
-  padding-right: 4.5rem;
-  margin-bottom: 0.25rem;
-  transition: all 0.2s ease;
-}
-
-.status-controls {
-  position: absolute;
-  top: 50%;
-  right: 0.5rem;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 0.25rem;
-  z-index: 2;
-}
-
-.edit-status-btn,
-.delete-status-btn {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.7rem;
-}
-
-.edit-status-btn:hover {
-  background: rgba(0, 170, 255, 0.1);
-  border-color: rgba(0, 170, 255, 0.2);
-}
-
-.delete-status-btn:hover {
-  background: rgba(255, 59, 48, 0.1);
-  border-color: rgba(255, 59, 48, 0.2);
-}
-
-.status-update-card:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.status-tag {
-  display: inline-block;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: capitalize;
-  margin-bottom: 1rem;
-}
-
-.status-tag.completed {
-  background: rgba(0, 255, 0, 0.1);
-  color: #4caf50;
-}
-
-.status-tag.in-progress {
-  background: rgba(255, 166, 0, 0.1);
-  color: #ffa726;
-}
-
-.status-tag.not-started {
-  background: rgba(255, 255, 255, 0.1);
-  color: #bdbdbd;
-}
-
-.update-content h3 {
-  margin: 0 0 0.8rem 0;
-  font-size: 1rem;
-  color: #fff;
-}
-
-.update-content p {
-  margin: 0 0 0rem 0;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.5;
-}
-
-.update-content time {
-  display: block;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.no-updates {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 3rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 16px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.add-first-update-btn {
-  margin-top: 1rem;
-  padding: 0.8rem 1.5rem;
-  background: linear-gradient(45deg, rgba(0, 170, 255, 0.1), rgba(0, 170, 255, 0.2));
-  border: 1px solid rgba(0, 170, 255, 0.3);
-  border-radius: 8px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(5px);
-}
-
-.add-first-update-btn:hover {
-  background: linear-gradient(45deg, rgba(0, 170, 255, 0.2), rgba(0, 170, 255, 0.3));
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(0, 170, 255, 0.1);
-}
-
-@media (max-width: 768px) {
-  .status-updates-section {
-    padding: 0 1rem;
-  }
-  
-  .status-updates-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Style the status sidebar */
-.status-sidebar {
-  background: rgba(255, 255, 255, 0.03);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 2rem;
-  height: calc(100vh - 8rem);
-  position: sticky;
-  top: 1rem;
-  overflow-y: auto;
-}
-
-.status-updates-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-
-.status-update-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 0.5rem;
-  transition: all 0.3s ease;
-}
-
-.status-update-card:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* Update responsive design */
-@media (max-width: 1400px) {
-  .roadmap-container {
-    grid-template-columns: 25% 50% 25%;
-  }
-}
-
-@media (max-width: 1200px) {
-  .roadmap-container {
-    grid-template-columns: 1fr;
-    padding-top: 60px;
-    gap: 0;
-  }
-
-  .app-header {
-    padding: 0.8rem 1.5rem;
-  }
-
-  .goals-column,
-  .timeline-column,
-  .status-column {
-    padding: 1.5rem;
-    height: auto;
-    min-height: auto;
-    position: relative;
-    top: 0;
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .milestone-content {
-    width: calc(100% - 4rem);
-    margin: 1rem 2rem !important;
-  }
-
-  .road-line {
-    left: 2rem;
-    transform: none;
-  }
-
-  .milestone-point {
-    left: 2rem;
-    transform: none;
-  }
-}
-
-.add-milestone-btn {
-  position: relative;
-  margin: 2rem auto;
-  padding: 0.8rem 1.5rem;
-  background: rgba(0, 170, 255, 0.1);
-  border: 1px solid rgba(0, 170, 255, 0.3);
-  border-radius: 8px;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 2;
-}
-
-.add-milestone-btn:hover {
-  background: rgba(0, 170, 255, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 170, 255, 0.1);
-}
-
-/* Style the goals column */
-.goals-column {
-  background-color: #000;
-  height: calc(100vh - 80px);
-  overflow-y: auto;
-  padding: 2rem;
-  position: sticky;
-  top: 80px;
-  transition: all 0.3s ease;
-}
-
-/* Style the timeline column */
-.timeline-column {
-  padding: 0;
-  height: calc(100vh - 80px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  width: 100%;
-  position: relative;
-}
-
-/* Style the status column */
-.status-column {
-  background-color: #000;
-  padding: 2rem;
-  height: calc(100vh - 80px);
-  position: sticky;
-  top: 80px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Adjust the road width */
-.road {
-  width: 100%;
-  max-width: 800px;
-  position: relative;
-  padding: 3rem 2rem;
-  margin-top: 2rem;
-}
-
-/* Update responsive design */
-@media (max-width: 1400px) {
-  .roadmap-container {
-    grid-template-columns: 25% 50% 25%;
-  }
-}
-
-@media (max-width: 1200px) {
-  .roadmap-container {
-    grid-template-columns: 1fr;
-  }
-
-  .goals-column,
-  .timeline-column,
-  .status-column {
-    height: auto;
-    min-height: auto;
-    position: relative;
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .goals-column {
-    padding-top: 2rem;
-  }
-
-  .timeline-column {
-    padding: 2rem 1rem;
-  }
-
-  .status-column {
-    border-bottom: none;
-  }
-}
-
-/* Adjust content widths */
-.project-tabs {
-  width: 100%;
-  overflow-x: auto;
-  padding: 1rem 0;
-  justify-content: flex-start;
-}
-
-.project-summary {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.goals-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 100%;
-}
-
-.status-updates-list {
-  width: 100%;
-}
-
-/* Hide scrollbars but keep functionality */
-.goals-column,
-.timeline-column,
-.status-column {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.goals-column::-webkit-scrollbar,
-.timeline-column::-webkit-scrollbar,
-.status-column::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-/* Adjust headers */
-.goals-column h2,
-.status-column h2 {
-  font-size: 1.2rem;
-  margin-bottom: 1.5rem;
-  color: #fff;
-}
-
-.app-header {
-  margin-bottom: 2rem;
-}
-
-.app-header h1 {
-  font-size: 1.5rem;
-}
-
-/* Common text adjustments */
-h1, h2, h3, p {
-  margin: 0;
-  line-height: 1.4;
-}
-
-/* Modern project selector styling */
-.project-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  width: 100%;
-}
-
-/* Enhanced dropdown styling */
-.project-dropdown {
-  flex: 1;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #fff;
-  padding: 0.8rem 1rem;
-  font-size: 1.1rem;
-  cursor: pointer;
-  appearance: none;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255, 255, 255, 0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1em;
-  padding-right: 2.5rem;
-  min-width: 200px;
-}
-
-.project-dropdown:hover {
-  background-color: rgba(0, 0, 0, 0.6);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.project-dropdown:focus {
-  outline: none;
-  border-color: rgba(0, 170, 255, 0.5);
-  box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.2);
-}
-
-/* Compact new project button */
-.add-project-btn {
-  flex: 0 0 auto;
-  width: auto;
-  padding: 0.8rem 1.2rem;
-  background: rgba(0, 170, 255, 0.1);
-  border: 1px solid rgba(0, 170, 255, 0.3);
-  border-radius: 8px;
-  color: #fff;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  max-width: 150px;
-}
-
-.add-project-btn:hover {
-  background: rgba(0, 170, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-/* Project header container */
-.project-header {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto 2rem auto;
-  padding: 1rem 2rem;
-  box-sizing: border-box;
-  background: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0));
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .project-selector {
-    flex-direction: column;
-    gap: 0.8rem;
-  }
-
-  .project-dropdown {
-    width: 100%;
-    min-width: unset;
-  }
-
-  .add-project-btn {
-    width: 100%;
-    max-width: unset;
-  }
-}
-
-/* Add these styles for the fade effect */
-.fade-section {
-  width: 100%;
-  opacity: 0;
-  transform: translateY(20vh);
-  visibility: hidden;
-  transition: opacity 0.6s ease-out, transform 1s ease-out;
-  will-change: opacity, visibility;
-}
-
-.fade-section.is-visible {
-  opacity: 1;
-  transform: none;
-  visibility: visible;
-}
-
-.notes-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.add-note-btn {
-  padding: 0.3rem 0.6rem;
-  font-size: 0.75rem;
-  background: rgba(0, 170, 255, 0.1);
-  border: 1px solid rgba(0, 170, 255, 0.2);
-  border-radius: 4px;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.add-note-btn:hover {
-  background: rgba(0, 170, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-.add-note-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px;
-}
-
-.note-type-select {
-  padding: 0.4rem;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: #fff;
-  font-size: 0.8rem;
-}
-
-.note-input {
-  padding: 0.4rem;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: #fff;
-  font-size: 0.8rem;
-}
-
-.note-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-.cancel-note-btn,
-.add-note-submit-btn {
-  padding: 0.3rem 0.6rem;
-  font-size: 0.75rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancel-note-btn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.add-note-submit-btn {
-  background: rgba(0, 170, 255, 0.1);
-  border: 1px solid rgba(0, 170, 255, 0.2);
-  color: #fff;
-}
-
-.notes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.note-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.6rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-  font-size: 0.75rem;
-}
-
-.note-icon {
-  font-size: 0.9rem;
-}
-
-.note-content {
-  flex: 1;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.remove-note-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0 0.2rem;
-  transition: color 0.2s ease;
-}
-
-.remove-note-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-/* Note type styles */
-.note-item.note-blocker {
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid rgba(255, 59, 48, 0.2);
-}
-
-.note-item.note-dependency {
-  background: rgba(255, 204, 0, 0.1);
-  border: 1px solid rgba(255, 204, 0, 0.2);
-}
-
-.note-item.note-warning {
-  background: rgba(255, 149, 0, 0.1);
-  border: 1px solid rgba(255, 149, 0, 0.2);
-}
-
-.note-item.note-info {
-  background: rgba(0, 170, 255, 0.1);
-  border: 1px solid rgba(0, 170, 255, 0.2);
-}
-
-/* Milestone notes styles */
-.milestone-notes {
-  margin: 0.75rem 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.milestone .note-item {
-  padding: 0.3rem 0.5rem;
-  font-size: 0.7rem;
-}
-
-.milestone .note-icon {
-  font-size: 0.8rem;
-}
-
-.delete-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid rgba(255, 59, 48, 0.2);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-}
-
-.delete-btn:hover {
-  background: rgba(255, 59, 48, 0.2);
-  border-color: rgba(255, 59, 48, 0.3);
-  transform: translateY(-1px);
-}
-
-.confirmation-modal {
-  max-width: 400px;
-}
-
-.confirmation-message {
-  margin: 1rem 0;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.modal-actions .delete-btn {
-  width: auto;
-  height: auto;
-  padding: 0.8rem 1.5rem;
-  font-size: 0.9rem;
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid rgba(255, 59, 48, 0.3);
-  color: rgb(255, 59, 48);
-}
-
-.modal-actions .delete-btn:hover {
-  background: rgba(255, 59, 48, 0.2);
-  transform: translateY(-1px);
-}
-
-.status-selector {
-  margin: 1rem 0;
-}
-
-.status-options {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.status-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: none;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.status-option:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.status-option.selected {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.status-icon {
-  font-size: 1.2rem;
-}
-
-.status-update-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.update-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .status-tag {
@@ -1862,7 +1326,18 @@ h1, h2, h3, p {
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+  width: fit-content;
+}
+
+/* Remove margin-bottom from status-tag since we're using gap in the parent */
+.status-tag {
+  margin-bottom: 0;
+}
+
+/* Ensure the content text aligns properly */
+.update-content p {
+  margin: 0;
+  flex: 1;
 }
 
 .status-tag.completed {
@@ -2030,4 +1505,308 @@ h1, h2, h3, p {
   border-color: rgba(0, 170, 255, 0.2);
   color: rgba(255, 255, 255, 0.9);
   transform: translateY(-1px);
+}
+
+/* Status selector styles */
+.status-selector {
+  margin: 1rem 0;
+}
+
+.status-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* Status option base styles */
+.status-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Selected state indicator */
+.status-option.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: currentColor;
+  box-shadow: 0 0 12px currentColor;
+}
+
+/* Completed status */
+.status-option:has(.status-icon:contains('✅')) {
+  background: rgba(52, 199, 89, 0.05);
+  border-color: rgba(52, 199, 89, 0.2);
+  color: rgb(52, 199, 89);
+}
+
+.status-option:has(.status-icon:contains('✅')).selected {
+  background: rgba(52, 199, 89, 0.15);
+  border-color: rgba(52, 199, 89, 0.3);
+  box-shadow: 0 4px 20px rgba(52, 199, 89, 0.1);
+}
+
+/* In Progress status */
+.status-option:has(.status-icon:contains('🔄')) {
+  background: rgba(255, 149, 0, 0.05);
+  border-color: rgba(255, 149, 0, 0.2);
+  color: rgb(255, 149, 0);
+}
+
+.status-option:has(.status-icon:contains('🔄')).selected {
+  background: rgba(255, 149, 0, 0.15);
+  border-color: rgba(255, 149, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 149, 0, 0.1);
+}
+
+/* Not Started status - update the selector to match the new icon */
+.status-option:has(.status-icon:contains('⛔')) {
+  background: rgba(255, 59, 48, 0.05);
+  border-color: rgba(255, 59, 48, 0.2);
+  color: rgb(255, 59, 48);
+}
+
+.status-option:has(.status-icon:contains('⛔')).selected {
+  background: rgba(255, 59, 48, 0.15);
+  border-color: rgba(255, 59, 48, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 59, 48, 0.1);
+}
+
+.status-option:hover {
+  transform: translateY(-1px);
+}
+
+.status-icon {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.status-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Add a checkmark for selected status */
+.status-option.selected::after {
+  content: '✓';
+  position: absolute;
+  right: 1rem;
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
+
+/* Modal content styles */
+.modal textarea {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  color: #fff;
+  font-size: 0.95rem;
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+}
+
+.modal textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Status Groups */
+.status-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.status-group {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-group-header {
+  width: 100%;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-group-header.completed {
+  color: rgb(52, 199, 89);
+}
+
+.status-group-header.in-progress {
+  color: rgb(255, 149, 0);
+}
+
+.status-group-header.not-started {
+  color: rgb(255, 59, 48);
+}
+
+.status-group-info {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.status-icon {
+  font-size: 1.2rem;
+}
+
+.status-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.status-count {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: #fff;
+}
+
+.expand-icon {
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.status-group.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+.status-group-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+  opacity: 0;
+}
+
+.status-group.expanded .status-group-content {
+  max-height: 2000px; /* Adjust based on your needs */
+  opacity: 1;
+}
+
+.status-update-card {
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Update existing status card styles */
+.status-update-card {
+  background: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+.status-update-card:first-child {
+  border-top: none;
+}
+
+/* Update the section header styles */
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 0;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+/* Update the add status button */
+.add-status-btn {
+  width: 100%;
+  padding: 0.8rem;
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.1), rgba(0, 170, 255, 0.05));
+  border: 1px solid rgba(0, 170, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.add-status-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.15), rgba(0, 170, 255, 0.08));
+  border-color: rgba(0, 170, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Update status updates list to remove padding */
+.status-updates-list {
+  width: 100%;
+}
+
+/* Add new styles for the add project button in the project tiles */
+.add-project-tile {
+  min-width: 200px;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.08), rgba(0, 170, 255, 0.04));
+  border: 1px dashed rgba(0, 170, 255, 0.3);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.95rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.add-project-tile:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.12), rgba(0, 170, 255, 0.06));
+  border-color: rgba(0, 170, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Update project controls to only handle edit button */
+.project-controls {
+  position: fixed;
+  top: 1.5rem;
+  right: 6rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 1001;
 }
