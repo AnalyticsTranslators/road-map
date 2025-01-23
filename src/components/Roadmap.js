@@ -45,6 +45,19 @@ const TEAM_GOALS = {
   }
 };
 
+const NOTE_TYPES = {
+  BLOCKER: { icon: '🚫', label: 'Blocker' },
+  DEPENDENCY: { icon: '🔄', label: 'Dependency' },
+  WARNING: { icon: '⚠️', label: 'Warning' },
+  INFO: { icon: 'ℹ️', label: 'Info' }
+};
+
+const STATUS_TYPES = {
+  'Completed': { icon: '✅', label: 'Completed' },
+  'In Progress': { icon: '🔄', label: 'In Progress' },
+  'Not Started': { icon: '⭕', label: 'Not Started' }
+};
+
 const AddMilestoneModal = ({ isOpen, onClose, onAdd }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -240,19 +253,15 @@ const EditSummaryModal = ({ isOpen, onClose, currentSummary, onSave }) => {
 
 const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => {
   const [newUpdate, setNewUpdate] = useState({
-    title: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    status: 'not_started'
+    content: '',
+    status: 'Completed'
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const update = {
-      ...newUpdate,
-      id: Date.now()
-    };
-    onSave([...(currentUpdates || []), update]);
+    console.log('Submitting status update:', newUpdate);
+    console.log('Available status types:', Object.keys(STATUS_TYPES));
+    onSave(newUpdate);
     onClose();
   };
 
@@ -264,41 +273,29 @@ const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => 
         <h2>Add Status Update</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Title</label>
-            <input
-              type="text"
-              value={newUpdate.title}
-              onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
+            <label>Status Message</label>
             <textarea
-              value={newUpdate.description}
-              onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
+              value={newUpdate.content}
+              onChange={(e) => setNewUpdate({ ...newUpdate, content: e.target.value })}
+              placeholder="Enter status update..."
               required
             />
           </div>
-          <div className="form-group">
+          <div className="form-group status-selector">
             <label>Status</label>
-            <select
-              value={newUpdate.status}
-              onChange={(e) => setNewUpdate({ ...newUpdate, status: e.target.value })}
-            >
-              <option value="not_started">Not Started</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Date</label>
-            <input
-              type="date"
-              value={newUpdate.date}
-              onChange={(e) => setNewUpdate({ ...newUpdate, date: e.target.value })}
-              required
-            />
+            <div className="status-options">
+              {Object.entries(STATUS_TYPES).map(([key, { icon, label }]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`status-option ${newUpdate.status === key ? 'selected' : ''}`}
+                  onClick={() => setNewUpdate({ ...newUpdate, status: key })}
+                >
+                  <span className="status-icon">{icon}</span>
+                  <span className="status-label">{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="cancel-btn">
@@ -314,210 +311,36 @@ const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => 
   );
 };
 
-const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone, user }) => {
-  const [title, setTitle] = useState(milestone?.title || '');
-  const [description, setDescription] = useState(milestone?.description || '');
-  const [date, setDate] = useState(milestone?.date || '');
-  const [completion, setCompletion] = useState(milestone?.completion || 0);
-  const [notes, setNotes] = useState(milestone?.notes || []);
+const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone }) => {
+  const [title, setTitle] = useState(milestone.title);
+  const [description, setDescription] = useState(milestone.description);
+  const [date, setDate] = useState(milestone.date);
+  const [completion, setCompletion] = useState(milestone.completion);
+  const [notes, setNotes] = useState(milestone.notes || []);
   const [showAddNote, setShowAddNote] = useState(false);
-  const [newNote, setNewNote] = useState({ type: 'info', content: '' });
+  const [newNote, setNewNote] = useState({ type: 'INFO', content: '' });
 
-  useEffect(() => {
-    if (milestone) {
-      setTitle(milestone.title);
-      setDescription(milestone.description);
-      setDate(milestone.date);
-      setCompletion(milestone.completion);
-      setNotes(milestone.notes || []);
-    }
-  }, [milestone]);
-
-  const handleAddNote = async () => {
-    try {
-      const { data: newNoteData, error } = await supabase
-        .from('milestone_notes')
-        .insert({
-          milestone_id: milestone.id,
-          type: newNote.type,
-          content: newNote.content,
-          created_by: user.id
-        })
-        .select('*')
-        .single();
-
-      if (error) throw error;
-
-      setNotes([...notes, newNoteData]);
+  const handleAddNote = () => {
+    if (newNote.content.trim()) {
+      setNotes([...notes, { ...newNote, id: Date.now() }]);
+      setNewNote({ type: 'INFO', content: '' });
       setShowAddNote(false);
-      setNewNote({ type: 'info', content: '' });
-    } catch (error) {
-      console.error('Error adding note:', error);
-      alert('Failed to add note: ' + error.message);
     }
   };
 
-  const handleSave = () => {
+  const handleRemoveNote = (noteId) => {
+    setNotes(notes.filter(note => note.id !== noteId));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
     onSave({
       ...milestone,
       title,
       description,
       date,
-      completion,
+      completion: Number(completion),
       notes
-    });
-  };
-
-  const handleDeleteNote = async (noteId, milestoneId) => {
-    try {
-      const { error } = await supabase
-        .from('milestone_notes')
-        .delete()
-        .match({ id: noteId });
-
-      if (error) throw error;
-
-      // Update local state
-      setNotes(notes.filter(note => note.id !== noteId));
-    } catch (error) {
-      console.error('Error deleting note:', error);
-      alert('Failed to delete note: ' + error.message);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Edit Milestone</h2>
-        <div className="modal-form">
-          <div className="form-group">
-            <label>Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Date</label>
-            <input
-              type="text"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Completion (%)</label>
-            <input
-              type="number"
-              value={completion}
-              onChange={(e) => setCompletion(Number(e.target.value))}
-              min="0"
-              max="100"
-            />
-          </div>
-
-          {/* Notes Section */}
-          <div className="form-group">
-            <label>Notes</label>
-            <div className="notes-list">
-              {notes.map((note) => (
-                <div key={note.id} className={`note-item note-${note.type}`}>
-                  <span className="note-icon">
-                    {note.type === 'info' && '💡'}
-                    {note.type === 'warning' && '⚠️'}
-                    {note.type === 'blocker' && '🛑'}
-                    {note.type === 'dependency' && '🔄'}
-                  </span>
-                  <span className="note-content">{note.content}</span>
-                  <button
-                    type="button"
-                    className="remove-note-btn"
-                    onClick={() => handleDeleteNote(note.id, milestone.id)}
-                    title="Remove note"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-            
-            {!showAddNote ? (
-              <button 
-                type="button" 
-                className="add-note-btn"
-                onClick={() => setShowAddNote(true)}
-              >
-                + Add Note
-              </button>
-            ) : (
-              <div className="add-note-form">
-                <select
-                  value={newNote.type}
-                  onChange={(e) => setNewNote({ ...newNote, type: e.target.value })}
-                >
-                  <option value="info">Info</option>
-                  <option value="warning">Warning</option>
-                  <option value="blocker">Blocker</option>
-                  <option value="dependency">Dependency</option>
-                </select>
-                <input
-                  type="text"
-                  value={newNote.content}
-                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                  placeholder="Note content"
-                />
-                <div className="note-actions">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowAddNote(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={handleAddNote}
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="modal-actions">
-            <button type="button" onClick={onClose}>Cancel</button>
-            <button type="button" onClick={handleSave}>Save Changes</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const EditStatusModal = ({ isOpen, onClose, onSave, status }) => {
-  const [title, setTitle] = useState(status.title);
-  const [description, setDescription] = useState(status.description);
-  const [date, setDate] = useState(status.date);
-  const [statusState, setStatusState] = useState(status.status);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({
-      ...status,
-      title,
-      description,
-      date,
-      status: statusState
     });
     onClose();
   };
@@ -527,7 +350,7 @@ const EditStatusModal = ({ isOpen, onClose, onSave, status }) => {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h2>Edit Status Update</h2>
+        <h2>Edit Milestone</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Title</label>
@@ -547,24 +370,144 @@ const EditStatusModal = ({ isOpen, onClose, onSave, status }) => {
             />
           </div>
           <div className="form-group">
-            <label>Status</label>
-            <select
-              value={statusState}
-              onChange={(e) => setStatusState(e.target.value)}
-            >
-              <option value="not_started">Not Started</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-          <div className="form-group">
             <label>Date</label>
             <input
-              type="date"
+              type="text"
+              placeholder="e.g., March 2024"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
             />
+          </div>
+          <div className="form-group">
+            <label>Completion (%)</label>
+            <input
+              type="number"
+              value={completion}
+              onChange={(e) => setCompletion(e.target.value)}
+              min="0"
+              max="100"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <div className="notes-header">
+              <label>Notes</label>
+              <button 
+                type="button" 
+                className="add-note-btn"
+                onClick={() => setShowAddNote(true)}
+              >
+                + Add Note
+              </button>
+            </div>
+            {showAddNote && (
+              <div className="add-note-form">
+                <select
+                  value={newNote.type}
+                  onChange={(e) => setNewNote({ ...newNote, type: e.target.value })}
+                  className="note-type-select"
+                >
+                  {Object.entries(NOTE_TYPES).map(([key, { icon, label }]) => (
+                    <option key={key} value={key}>
+                      {icon} {label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={newNote.content}
+                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                  placeholder="Enter note content..."
+                  className="note-input"
+                />
+                <div className="note-actions">
+                  <button type="button" className="cancel-note-btn" onClick={() => setShowAddNote(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="add-note-submit-btn" onClick={handleAddNote}>
+                    Add
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="notes-list">
+              {notes.map(note => (
+                <div key={note.id} className={`note-item note-${note.type.toLowerCase()}`}>
+                  <span className="note-icon">
+                    {NOTE_TYPES[note.type.toUpperCase()]?.icon || 'ℹ️'}
+                  </span>
+                  <span className="note-content">{note.content}</span>
+                  <button
+                    type="button"
+                    className="remove-note-btn"
+                    onClick={() => handleRemoveNote(note.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" className="submit-btn">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const EditStatusModal = ({ isOpen, onClose, onSave, status }) => {
+  const [editedStatus, setEditedStatus] = useState({
+    content: status.content || '',
+    status: status.status_type || 'Not Started',
+    date: status.date || new Date().toISOString(),
+    id: status.id
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(editedStatus);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Edit Status Update</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Status Message</label>
+            <textarea
+              value={editedStatus.content}
+              onChange={(e) => setEditedStatus({ ...editedStatus, content: e.target.value })}
+              placeholder="Enter status update..."
+              required
+            />
+          </div>
+          <div className="form-group status-selector">
+            <label>Status</label>
+            <div className="status-options">
+              {Object.entries(STATUS_TYPES).map(([key, { icon, label }]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`status-option ${editedStatus.status === key ? 'selected' : ''}`}
+                  onClick={() => setEditedStatus({ ...editedStatus, status: key })}
+                >
+                  <span className="status-icon">{icon}</span>
+                  <span className="status-label">{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="cancel-btn">
@@ -652,7 +595,6 @@ const Roadmap = () => {
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
   const [activeNotesMilestone, setActiveNotesMilestone] = useState(null);
   const [user, setUser] = useState(null);
-  const [editingMilestoneId, setEditingMilestoneId] = useState(null);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -679,11 +621,66 @@ const Roadmap = () => {
     return () => timeline.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Remove the duplicate scroll handler effect
+  // Add this effect to get the current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+    };
+    
+    getCurrentUser();
+  }, []);
+
+  // Update the migrateOldNotes function to handle cases where user might not be loaded yet
+  const migrateOldNotes = async (milestone) => {
+    try {
+      // Check if milestone has old notes format (as a JSON field)
+      if (milestone.notes && !Array.isArray(milestone.notes)) {
+        const oldNotes = Object.entries(milestone.notes).map(([type, content]) => ({
+          type,
+          content
+        }));
+
+        // Get current user if not already set
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        
+        // Insert old notes into new table
+        const { data, error } = await supabase
+          .from('milestone_notes')
+          .insert(
+            oldNotes.map(note => ({
+              milestone_id: milestone.id,
+              type: note.type,
+              content: note.content,
+              created_by: currentUser?.id || null
+            }))
+          )
+          .select();
+
+        if (error) throw error;
+
+        // Clear old notes from milestone
+        const { error: updateError } = await supabase
+          .from('milestones')
+          .update({ notes: null })
+          .eq('id', milestone.id);
+
+        if (updateError) throw updateError;
+
+        return data;
+      }
+      return milestone.milestone_notes || [];
+    } catch (error) {
+      console.error('Error migrating notes:', error);
+      return milestone.milestone_notes || [];
+    }
+  };
+
+  // Update the fetch projects effect to include status updates
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        // Fetch projects with milestones and their notes
+        // First fetch projects with milestones and notes
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select(`
@@ -699,26 +696,42 @@ const Roadmap = () => {
 
         if (projectsError) throw projectsError;
 
-        // Sort milestones and include their notes
-        const projectsWithSortedMilestones = projectsData.map(project => ({
-          ...project,
-          milestones: (project.milestones || [])
-            .sort((a, b) => a.position - b.position)
-            .map(milestone => ({
-              ...milestone,
-              notes: milestone.milestone_notes || [] // Ensure notes are included
-            }))
-        }));
+        // Then fetch status updates for the current project
+        const { data: statusUpdates, error: statusError } = await supabase
+          .from('status_updates')
+          .select('*')
+          .eq('project_id', projectsData[activeProject]?.id)
+          .order('created_at', { ascending: false });
 
-        setProjects(projectsWithSortedMilestones);
+        if (statusError) throw statusError;
+
+        // Process and combine the data
+        const processedProjects = await Promise.all(
+          projectsData.map(async (project) => ({
+            ...project,
+            status_updates: statusUpdates.filter(update => update.project_id === project.id),
+            milestones: await Promise.all(
+              (project.milestones || [])
+                .sort((a, b) => a.position - b.position)
+                .map(async (milestone) => ({
+                  ...milestone,
+                  notes: await migrateOldNotes(milestone)
+                }))
+            )
+          }))
+        );
+
+        setProjects(processedProjects);
       } catch (error) {
         console.error('Error fetching projects:', error);
         alert('Failed to fetch projects');
       }
     };
 
-    fetchProjects();
-  }, []);
+    if (user) {
+      fetchProjects();
+    }
+  }, [user, activeProject]); // Add activeProject as dependency
 
   useEffect(() => {
     const getUserRole = async () => {
@@ -736,27 +749,6 @@ const Roadmap = () => {
       }
     };
     getUserRole();
-  }, []);
-
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        setUser(user);
-      } catch (error) {
-        console.error('Error getting user:', error);
-      }
-    };
-
-    getUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
@@ -907,26 +899,57 @@ const Roadmap = () => {
 
   const handleUpdateStatus = async (updates) => {
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ status_updates: updates })
-        .eq('id', projects[activeProject].id);
+      // First get the current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      // Log the data we're about to send
+      console.log('Attempting to create status update with:', {
+        content: updates.content,
+        status_type: updates.status,
+        project_id: projects[activeProject].id,
+        created_by: currentUser?.id
+      });
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('status_updates')
+        .insert([{
+          content: updates.content,
+          status_type: updates.status,
+          project_id: projects[activeProject].id,
+          created_by: currentUser?.id
+        }])
+        .select();
 
+      if (error) {
+        console.error('Supabase error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+
+      console.log('Successfully created status update:', data[0]);
+
+      // Update local state
       setProjects(prevProjects => {
         const updatedProjects = [...prevProjects];
         updatedProjects[activeProject] = {
           ...updatedProjects[activeProject],
-          status_updates: updates
+          status_updates: [
+            data[0],
+            ...(updatedProjects[activeProject].status_updates || [])
+          ]
         };
         return updatedProjects;
       });
 
       setShowStatusModal(false);
     } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status. Please try again.');
+      console.error('Full error object:', error);
+      console.error('Error updating status:', error.message);
+      alert(`Failed to update status: ${error.message}`);
     }
   };
 
@@ -974,32 +997,52 @@ const Roadmap = () => {
 
   const handleEditStatus = async (updatedStatus) => {
     try {
-      const currentUpdates = projects[activeProject].status_updates || [];
-      const updatedUpdates = currentUpdates.map(update =>
-        update.id === updatedStatus.id ? updatedStatus : update
-      );
+      console.log('Attempting to update status with:', {
+        content: updatedStatus.content,
+        status_type: updatedStatus.status,
+        id: updatedStatus.id
+      });
 
       const { error } = await supabase
-        .from('projects')
-        .update({ status_updates: updatedUpdates })
-        .eq('id', projects[activeProject].id);
+        .from('status_updates')
+        .update({
+          content: updatedStatus.content,
+          status_type: updatedStatus.status
+        })
+        .eq('id', updatedStatus.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase update error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
 
+      console.log('Successfully updated status');
+
+      // Update local state
       setProjects(prevProjects => {
         const updatedProjects = [...prevProjects];
-        updatedProjects[activeProject] = {
-          ...updatedProjects[activeProject],
-          status_updates: updatedUpdates
-        };
+        const currentProject = updatedProjects[activeProject];
+        currentProject.status_updates = currentProject.status_updates.map(update =>
+          update.id === updatedStatus.id ? {
+            ...update,
+            content: updatedStatus.content,
+            status_type: updatedStatus.status
+          } : update
+        );
         return updatedProjects;
       });
 
       setShowEditStatusModal(false);
       setSelectedStatus(null);
     } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status. Please try again.');
+      console.error('Full error object:', error);
+      console.error('Error updating status:', error.message);
+      alert(`Failed to update status: ${error.message}`);
     }
   };
 
@@ -1033,21 +1076,21 @@ const Roadmap = () => {
 
   const handleDeleteStatus = async (status) => {
     try {
-      const currentUpdates = projects[activeProject].status_updates || [];
-      const updatedUpdates = currentUpdates.filter(update => update.id !== status.id);
-
       const { error } = await supabase
-        .from('projects')
-        .update({ status_updates: updatedUpdates })
-        .eq('id', projects[activeProject].id);
+        .from('status_updates')
+        .delete()
+        .eq('id', status.id);
 
       if (error) throw error;
 
+      // Update local state
       setProjects(prevProjects => {
         const updatedProjects = [...prevProjects];
         updatedProjects[activeProject] = {
           ...updatedProjects[activeProject],
-          status_updates: updatedUpdates
+          status_updates: updatedProjects[activeProject].status_updates.filter(
+            update => update.id !== status.id
+          )
         };
         return updatedProjects;
       });
@@ -1060,43 +1103,25 @@ const Roadmap = () => {
     }
   };
 
+  // Update the handleAddNote function to handle cases where user might not be loaded yet
   const handleAddNote = async (milestoneId, noteData) => {
     try {
-      if (!user?.id) {
-        console.error('No user ID found');
-        throw new Error('User not authenticated');
-      }
-
-      console.log('Starting note creation with data:', {
-        milestone_id: milestoneId,
-        type: noteData.type,
-        content: noteData.content,
-        created_by: user.id
-      });
-
-      // First, insert the note into Supabase
-      const { data: newNote, error } = await supabase
+      // Get current user if not already set
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
         .from('milestone_notes')
-        .insert({
-          milestone_id: milestoneId,
-          type: noteData.type,
-          content: noteData.content,
-          created_by: user.id
-        })
-        .select('*')
-        .single();
+        .insert([
+          {
+            milestone_id: milestoneId,
+            type: noteData.type,
+            content: noteData.content,
+            created_by: currentUser?.id || null
+          }
+        ])
+        .select();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      if (!newNote) {
-        console.error('No note data returned from insert');
-        throw new Error('No note data returned from Supabase');
-      }
-
-      console.log('Successfully created note in Supabase:', newNote);
+      if (error) throw error;
 
       // Update local state
       const updatedProjects = [...projects];
@@ -1105,23 +1130,18 @@ const Roadmap = () => {
       );
       
       if (milestone) {
-        console.log('Found milestone, updating with new note:', {
-          milestoneId: milestone.id,
-          currentNotes: milestone.notes?.length || 0
-        });
-        milestone.notes = [...(milestone.notes || []), newNote];
+        milestone.notes = [...(milestone.notes || []), data[0]];
         setProjects(updatedProjects);
-      } else {
-        console.error('Could not find milestone:', milestoneId);
       }
 
       setShowAddNoteModal(false);
     } catch (error) {
       console.error('Error adding note:', error);
-      alert('Failed to add note: ' + error.message);
+      alert('Failed to add note');
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleDeleteNote = async (noteId, milestoneId) => {
     try {
       const { error } = await supabase
@@ -1149,13 +1169,6 @@ const Roadmap = () => {
 
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
-
-  // Add this function with the other handlers
-  const handleEditModalClose = () => {
-    setShowEditMilestoneModal(false);
-    setEditingMilestoneId(null);
-    setSelectedMilestone(null);
-  };
 
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
@@ -1239,13 +1252,12 @@ const Roadmap = () => {
                           title="Edit"
                           onClick={() => {
                             setSelectedMilestone(milestone);
-                            setEditingMilestoneId(editingMilestoneId === milestone.id ? null : milestone.id);
                             setShowEditMilestoneModal(true);
                           }}
                         >
                           ✏️
                         </button>
-                        <button
+                        <button 
                           className="delete-btn" 
                           title="Delete"
                           onClick={() => {
@@ -1257,54 +1269,24 @@ const Roadmap = () => {
                         </button>
                       </div>
                     )}
-                    
                     <div className="milestone-header">
                       <h3>{milestone.title}</h3>
                       <span className="completion">{milestone.completion}%</span>
                     </div>
                     <div className="milestone-date">{milestone.date}</div>
                     <p>{milestone.description}</p>
-                    
-                    {/* Notes section - only show add button when editing */}
-                    <div className="milestone-notes">
-                      <div className="notes-header">
-                        <h4>Notes</h4>
-                        {editingMilestoneId === milestone.id && userRole === 'editor' && (
-                          <button 
-                            className="add-note-btn"
-                            onClick={() => {
-                              setActiveNotesMilestone(milestone.id);
-                              setShowAddNoteModal(true);
-                            }}
-                          >
-                            + Add Note
-                          </button>
-                        )}
-                      </div>
-                      <div className="notes-list">
-                        {milestone.notes?.map((note) => (
-                          <div key={note.id} className={`note-item note-${note.type}`}>
+                    {milestone.notes && milestone.notes.length > 0 && (
+                      <div className="milestone-notes">
+                        {milestone.notes.map(note => (
+                          <div key={note.id} className={`note-item note-${note.type.toLowerCase()}`}>
                             <span className="note-icon">
-                              {note.type === 'info' && '💡'}
-                              {note.type === 'warning' && '⚠️'}
-                              {note.type === 'blocker' && '🛑'}
-                              {note.type === 'dependency' && '🔄'}
+                              {NOTE_TYPES[note.type.toUpperCase()]?.icon || 'ℹ️'}
                             </span>
                             <span className="note-content">{note.content}</span>
-                            {editingMilestoneId === milestone.id && userRole === 'editor' && (
-                              <button
-                                className="remove-note-btn"
-                                onClick={() => handleDeleteNote(note.id, milestone.id)}
-                                title="Remove note"
-                              >
-                                ×
-                              </button>
-                            )}
                           </div>
                         ))}
                       </div>
-                    </div>
-
+                    )}
                     <div className="progress-bar">
                       <div 
                         className="progress-fill"
@@ -1369,13 +1351,11 @@ const Roadmap = () => {
                     </button>
                   </div>
                 )}
-                <div className={`status-tag ${update.status}`}>
-                  {update.status.replace('_', ' ')}
+                <div className={`status-tag ${(update.status_type || 'Not Started').toLowerCase().replace(' ', '-')}`}>
+                  {STATUS_TYPES[update.status_type || 'Not Started']?.icon} {STATUS_TYPES[update.status_type || 'Not Started']?.label}
                 </div>
                 <div className="update-content">
-                  <h3>{update.title}</h3>
-                  <p>{update.description}</p>
-                  <time>{update.date}</time>
+                  <p>{update.content}</p>
                 </div>
               </div>
             ))
@@ -1413,17 +1393,21 @@ const Roadmap = () => {
         <StatusUpdateModal
           isOpen={showStatusModal}
           onClose={() => setShowStatusModal(false)}
-          currentUpdates={projects[activeProject].status_updates || []}
+          currentUpdates={Array.isArray(projects[activeProject]?.status_updates) 
+            ? projects[activeProject].status_updates 
+            : []}
           onSave={handleUpdateStatus}
         />
       )}
       {showEditMilestoneModal && selectedMilestone && (
         <EditMilestoneModal
           isOpen={showEditMilestoneModal}
-          onClose={handleEditModalClose}
+          onClose={() => {
+            setShowEditMilestoneModal(false);
+            setSelectedMilestone(null);
+          }}
           onSave={handleEditMilestone}
           milestone={selectedMilestone}
-          user={user}
         />
       )}
       {showEditStatusModal && selectedStatus && (
@@ -1479,10 +1463,9 @@ const AddNoteModal = ({ isOpen, onClose, onAdd, milestoneId }) => {
   const [type, setType] = useState('info');
   const [content, setContent] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Submitting note:', { type, content, milestoneId }); // Debug log
-    await onAdd(milestoneId, { type, content });
+    onAdd(milestoneId, { type, content });
     setType('info');
     setContent('');
   };
