@@ -32,11 +32,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 4,
   },
+  goalsGrid: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
   goalItem: {
-    marginBottom: 8,
     padding: 8,
-    borderLeft: '3px solid #0070f3',
+    borderRadius: 4,
     backgroundColor: '#f8f9fa',
+    borderLeft: '3px solid #0070f3',
+    marginBottom: 8,
+    width: '48%',
+  },
+  goalLabel: {
+    fontSize: 11,
+    color: '#444',
   },
   statusUpdate: {
     marginBottom: 12,
@@ -51,6 +64,7 @@ const styles = StyleSheet.create({
   statusType: {
     fontSize: 11,
     color: '#666',
+    fontWeight: 'bold',
   },
   statusDate: {
     fontSize: 11,
@@ -96,56 +110,165 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  statusGroup: {
+    marginBottom: 20,
+  },
+  statusGroupTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    paddingBottom: 4,
+    borderBottom: '1px solid #eee',
+  },
 });
 
-const ProjectPDF = ({ project, statusUpdates, milestones }) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.projectTitle}>{project.name}</Text>
-        <Text style={styles.projectDate}>Generated on {new Date().toLocaleDateString()}</Text>
-      </View>
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Completed':
+      return '#f0fff4'; // Light green background
+    case 'In Progress':
+      return '#fff7e6'; // Light orange background
+    case 'Not Started':
+      return '#fff1f0'; // Light red background
+    default:
+      return '#f8f9fa';
+  }
+};
 
-      {/* Status Updates Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Status Updates</Text>
-        {statusUpdates.map((status, index) => (
-          <View key={index} style={[
-            styles.statusUpdate,
-            { backgroundColor: status.status_type === 'Not Started' ? '#fff1f0' : '#f6ffed' }
-          ]}>
-            <View style={styles.statusMeta}>
-              <Text style={styles.statusType}>{status.status_type}</Text>
-              <Text style={styles.statusDate}>
-                {new Date(status.created_at).toLocaleDateString()}
+const getStatusTextColor = (status) => {
+  switch (status) {
+    case 'Completed':
+      return '#34c759'; // Green text
+    case 'In Progress':
+      return '#ff9500'; // Orange text
+    case 'Not Started':
+      return '#ff3b30'; // Red text
+    default:
+      return '#666';
+  }
+};
+
+const ProjectPDF = ({ project, statusUpdates, milestones }) => {
+  // Group status updates by type
+  const groupedStatuses = {
+    'Completed': statusUpdates?.filter(s => s.status_type === 'Completed') || [],
+    'In Progress': statusUpdates?.filter(s => s.status_type === 'In Progress') || [],
+    'Not Started': statusUpdates?.filter(s => s.status_type === 'Not Started') || []
+  };
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.projectTitle}>{project.name}</Text>
+          <Text style={styles.projectDate}>Generated on {new Date().toLocaleDateString()}</Text>
+        </View>
+
+        {/* Team Goals Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Team Goals</Text>
+          <View style={styles.goalsGrid}>
+            {project.goals?.map((goal, index) => (
+              <View key={index} style={styles.goalItem}>
+                <Text style={styles.goalLabel}>{goal.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Status Updates Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Status Updates</Text>
+          
+          {/* Completed Status Updates */}
+          {groupedStatuses['Completed'].length > 0 && (
+            <View style={styles.statusGroup}>
+              <Text style={[styles.statusGroupTitle, { color: getStatusTextColor('Completed') }]}>
+                Completed
               </Text>
+              {groupedStatuses['Completed'].map((status, index) => (
+                <View key={index} style={[
+                  styles.statusUpdate,
+                  { backgroundColor: getStatusColor(status.status_type) }
+                ]}>
+                  <View style={styles.statusMeta}>
+                    <Text style={styles.statusDate}>
+                      {new Date(status.created_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Text style={styles.statusContent}>{status.content}</Text>
+                </View>
+              ))}
             </View>
-            <Text style={styles.statusContent}>{status.content}</Text>
-          </View>
-        ))}
-      </View>
+          )}
 
-      {/* Roadmap Section */}
-      <View style={styles.roadmapSection}>
-        <Text style={styles.sectionTitle}>Project Roadmap</Text>
-        {milestones.map((milestone, index) => (
-          <View key={index} style={styles.milestone}>
-            <View style={styles.milestoneHeader}>
-              <Text style={styles.milestoneTitle}>{milestone.title}</Text>
-              <Text style={styles.milestoneDate}>{milestone.date}</Text>
+          {/* In Progress Status Updates */}
+          {groupedStatuses['In Progress'].length > 0 && (
+            <View style={styles.statusGroup}>
+              <Text style={[styles.statusGroupTitle, { color: getStatusTextColor('In Progress') }]}>
+                In Progress
+              </Text>
+              {groupedStatuses['In Progress'].map((status, index) => (
+                <View key={index} style={[
+                  styles.statusUpdate,
+                  { backgroundColor: getStatusColor(status.status_type) }
+                ]}>
+                  <View style={styles.statusMeta}>
+                    <Text style={styles.statusDate}>
+                      {new Date(status.created_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Text style={styles.statusContent}>{status.content}</Text>
+                </View>
+              ))}
             </View>
-            <Text style={styles.milestoneContent}>{milestone.description}</Text>
-          </View>
-        ))}
-      </View>
+          )}
 
-      {/* Footer */}
-      <Text style={styles.footer}>
-        Generated via GM Insights Roadmap • {new Date().toLocaleDateString()}
-      </Text>
-    </Page>
-  </Document>
-);
+          {/* Not Started Status Updates */}
+          {groupedStatuses['Not Started'].length > 0 && (
+            <View style={styles.statusGroup}>
+              <Text style={[styles.statusGroupTitle, { color: getStatusTextColor('Not Started') }]}>
+                Not Started
+              </Text>
+              {groupedStatuses['Not Started'].map((status, index) => (
+                <View key={index} style={[
+                  styles.statusUpdate,
+                  { backgroundColor: getStatusColor(status.status_type) }
+                ]}>
+                  <View style={styles.statusMeta}>
+                    <Text style={styles.statusDate}>
+                      {new Date(status.created_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Text style={styles.statusContent}>{status.content}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Roadmap Section */}
+        <View style={styles.roadmapSection}>
+          <Text style={styles.sectionTitle}>Project Roadmap</Text>
+          {milestones?.map((milestone, index) => (
+            <View key={index} style={styles.milestone}>
+              <View style={styles.milestoneHeader}>
+                <Text style={styles.milestoneTitle}>{milestone.title}</Text>
+                <Text style={styles.milestoneDate}>{milestone.date}</Text>
+              </View>
+              <Text style={styles.milestoneContent}>{milestone.description}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Footer */}
+        <Text style={styles.footer}>
+          Generated via GM Insights Roadmap • {new Date().toLocaleDateString()}
+        </Text>
+      </Page>
+    </Document>
+  );
+};
 
 export default ProjectPDF; 
