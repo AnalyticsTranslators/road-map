@@ -573,7 +573,9 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 const Roadmap = () => {
-  const [activeProject, setActiveProject] = useState(0);
+  // Get the saved project index from localStorage, default to 0 if not found
+  const savedProjectIndex = parseInt(localStorage.getItem('activeProjectIndex')) || 0;
+  const [activeProject, setActiveProject] = useState(savedProjectIndex);
   const roadRef = useRef(null);
   const containerRef = useRef(null);
   const [userRole, setUserRole] = useState(null);
@@ -696,6 +698,13 @@ const Roadmap = () => {
 
         if (projectsError) throw projectsError;
 
+        // Ensure the saved index is valid
+        const validIndex = savedProjectIndex < projectsData.length ? savedProjectIndex : 0;
+        if (validIndex !== activeProject) {
+          setActiveProject(validIndex);
+          localStorage.setItem('activeProjectIndex', validIndex);
+        }
+
         // Then fetch status updates for the current project
         const { data: statusUpdates, error: statusError } = await supabase
           .from('status_updates')
@@ -731,7 +740,7 @@ const Roadmap = () => {
     if (user) {
       fetchProjects();
     }
-  }, [user, activeProject]); // Add activeProject as dependency
+  }, [user, activeProject, savedProjectIndex]);
 
   useEffect(() => {
     const getUserRole = async () => {
@@ -955,6 +964,7 @@ const Roadmap = () => {
 
   const handleProjectChange = (index) => {
     setActiveProject(index);
+    localStorage.setItem('activeProjectIndex', index);
     // Scroll timeline to top when changing projects
     if (timelineRef.current) {
       timelineRef.current.scrollTop = 0;
