@@ -722,6 +722,9 @@ const Roadmap = () => {
   const [expandedGroups, setExpandedGroups] = useState(['completed']); // Default to showing completed
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedProjectForExport, setSelectedProjectForExport] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -1316,22 +1319,28 @@ const Roadmap = () => {
   // Add this near your other refs
   const projectTilesRef = useRef(null);
 
-  // Add this function to handle wheel events
-  const handleWheel = (e) => {
-    if (projectTilesRef.current) {
-      e.preventDefault();
-      projectTilesRef.current.scrollLeft += e.deltaY;
-    }
+  // Add these mouse event handlers
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - projectTilesRef.current.offsetLeft);
+    setScrollLeft(projectTilesRef.current.scrollLeft);
   };
 
-  // Add this useEffect to set up and clean up the event listener
-  useEffect(() => {
-    const tilesElement = projectTilesRef.current;
-    if (tilesElement) {
-      tilesElement.addEventListener('wheel', handleWheel, { passive: false });
-      return () => tilesElement.removeEventListener('wheel', handleWheel);
-    }
-  }, []);
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - projectTilesRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // Multiply by 2 for faster scrolling
+    projectTilesRef.current.scrollLeft = scrollLeft - walk;
+  };
 
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
@@ -1383,7 +1392,14 @@ const Roadmap = () => {
         </div>
         <div className={`project-header ${isHeaderVisible ? 'visible' : 'hidden'}`}>
           <div className="project-selector">
-            <div className="project-tiles" ref={projectTilesRef}>
+            <div 
+              className={`project-tiles ${isDragging ? 'dragging' : ''}`}
+              ref={projectTilesRef}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeave}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+            >
               {projects.map((project, index) => (
                 <button
                   key={project.id}
