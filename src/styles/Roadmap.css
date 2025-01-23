@@ -309,7 +309,7 @@
 .project-goals {
   position: fixed;
   left: 0;
-  top: 50%;
+  top: 60%;
   transform: translateY(-50%);
   width: 250px;
   padding: 1rem;
@@ -475,7 +475,7 @@
 .project-selector {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 2rem;
   width: 100%;
 }
@@ -1502,7 +1502,7 @@ h1, h2, h3, p {
 .project-selector {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 2rem;
   width: 100%;
 }
@@ -1890,4 +1890,144 @@ h1, h2, h3, p {
 .status-tag[class*="not started"] {
   background: rgba(255, 255, 255, 0.1);
   color: #bdbdbd;
+}
+
+/* Update KPI section styles */
+.project-kpis {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(0, 170, 255, 0.02);
+  border: 1px solid rgba(0, 170, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.kpi-item {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.1), rgba(0, 170, 255, 0.05));
+  border: 1px solid rgba(0, 170, 255, 0.15);
+  border-radius: 12px;
+  position: relative;
+  cursor: help;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-item:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(0, 170, 255, 0.15), rgba(0, 170, 255, 0.08));
+  box-shadow: 0 8px 24px rgba(0, 170, 255, 0.15);
+  border-color: rgba(0, 170, 255, 0.25);
+}
+
+.kpi-icon {
+  font-size: 1.4rem;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 170, 255, 0.3);
+}
+
+.kpi-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.95);
+  color: #fff;
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.3s ease;
+  margin-bottom: 0.8rem;
+  z-index: 1000;
+  border: 1px solid rgba(0, 170, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.kpi-item:hover .kpi-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.kpi-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.kpi-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 170, 255, 0.05);
+  border: 1px solid rgba(0, 170, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.kpi-select-btn:hover {
+  background: rgba(0, 170, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.kpi-select-btn.selected {
+  background: rgba(0, 170, 255, 0.15);
+  border-color: rgba(0, 170, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 170, 255, 0.1);
+}
+
+.kpi-select-icon {
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 170, 255, 0.1);
+  border-radius: 10px;
+}
+
+.kpi-select-text {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.edit-project-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.edit-project-btn:hover {
+  background: rgba(0, 170, 255, 0.1);
+  border-color: rgba(0, 170, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
 }

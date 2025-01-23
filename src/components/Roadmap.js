@@ -58,6 +58,24 @@ const STATUS_TYPES = {
   'Not Started': { icon: '⭕', label: 'Not Started' }
 };
 
+const PROJECT_KPIS = {
+  BETTER_CONVERSATIONS: {
+    id: 'better_conversations',
+    text: 'Enable better conversations with clients',
+    icon: '💬'
+  },
+  COLLABORATE_INSIGHTS: {
+    id: 'collaborate_insights',
+    text: 'Collaborate across functions to deliver scalable data insights',
+    icon: '📊'
+  },
+  KPI_SOLUTIONS: {
+    id: 'kpi_solutions',
+    text: 'Enable business with KPI Measurement Solutions',
+    icon: '📈'
+  }
+};
+
 const AddMilestoneModal = ({ isOpen, onClose, onAdd }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -135,25 +153,28 @@ const AddMilestoneModal = ({ isOpen, onClose, onAdd }) => {
 };
 
 const AddProjectModal = ({ isOpen, onClose, onAdd }) => {
-  const [name, setName] = useState('');
-  const [summary, setSummary] = useState('');
-  const [selectedGoals, setSelectedGoals] = useState([]);
+  const [projectData, setProjectData] = useState({
+    name: '',
+    summary: '',
+    kpis: []
+  });
+
+  const toggleKPI = (kpiId) => {
+    setProjectData(prev => ({
+      ...prev,
+      kpis: prev.kpis.includes(kpiId)
+        ? prev.kpis.filter(id => id !== kpiId)
+        : [...prev.kpis, kpiId]
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const newProject = {
-      name,
-      summary,
-      goals: selectedGoals,
-      milestones: []
-    };
-    onAdd(newProject);
-    
-    // Reset form
-    setName('');
-    setSummary('');
-    setSelectedGoals([]);
+    onAdd(projectData);
+    onClose();
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
@@ -164,37 +185,32 @@ const AddProjectModal = ({ isOpen, onClose, onAdd }) => {
             <label>Project Name</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={projectData.name}
+              onChange={(e) => setProjectData({ ...projectData, name: e.target.value })}
               required
             />
           </div>
           <div className="form-group">
-            <label>Summary</label>
+            <label>Project Summary</label>
             <textarea
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
+              value={projectData.summary}
+              onChange={(e) => setProjectData({ ...projectData, summary: e.target.value })}
               required
             />
           </div>
           <div className="form-group">
-            <label>Goals</label>
-            <div className="goals-select">
-              {Object.values(TEAM_GOALS).map(goal => (
-                <label key={goal.id} className="goal-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={selectedGoals.includes(goal)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedGoals([...selectedGoals, goal]);
-                      } else {
-                        setSelectedGoals(selectedGoals.filter(g => g.id !== goal.id));
-                      }
-                    }}
-                  />
-                  {goal.icon} {goal.label}
-                </label>
+            <label>Project KPIs</label>
+            <div className="kpi-selector">
+              {Object.values(PROJECT_KPIS).map((kpi) => (
+                <button
+                  key={kpi.id}
+                  type="button"
+                  className={`kpi-select-btn ${projectData.kpis.includes(kpi.id) ? 'selected' : ''}`}
+                  onClick={() => toggleKPI(kpi.id)}
+                >
+                  <span className="kpi-select-icon">{kpi.icon}</span>
+                  <span className="kpi-select-text">{kpi.text}</span>
+                </button>
               ))}
             </div>
           </div>
@@ -572,6 +588,82 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
   );
 };
 
+const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
+  const [projectData, setProjectData] = useState({
+    name: project.name,
+    summary: project.summary,
+    kpis: project.kpis || []
+  });
+
+  const toggleKPI = (kpiId) => {
+    setProjectData(prev => ({
+      ...prev,
+      kpis: prev.kpis.includes(kpiId)
+        ? prev.kpis.filter(id => id !== kpiId)
+        : [...prev.kpis, kpiId]
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(projectData);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Edit Project</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Project Name</label>
+            <input
+              type="text"
+              value={projectData.name}
+              onChange={(e) => setProjectData({ ...projectData, name: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Project Summary</label>
+            <textarea
+              value={projectData.summary}
+              onChange={(e) => setProjectData({ ...projectData, summary: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Project KPIs</label>
+            <div className="kpi-selector">
+              {Object.values(PROJECT_KPIS).map((kpi) => (
+                <button
+                  key={kpi.id}
+                  type="button"
+                  className={`kpi-select-btn ${projectData.kpis.includes(kpi.id) ? 'selected' : ''}`}
+                  onClick={() => toggleKPI(kpi.id)}
+                >
+                  <span className="kpi-select-icon">{kpi.icon}</span>
+                  <span className="kpi-select-text">{kpi.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" className="submit-btn">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const Roadmap = () => {
   // Get the saved project index from localStorage, default to 0 if not found
   const savedProjectIndex = parseInt(localStorage.getItem('activeProjectIndex')) || 0;
@@ -597,6 +689,8 @@ const Roadmap = () => {
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
   const [activeNotesMilestone, setActiveNotesMilestone] = useState(null);
   const [user, setUser] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showEditProjectModal, setShowEditProjectModal] = useState(false);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -814,69 +908,24 @@ const Roadmap = () => {
     }
   };
 
-  const handleAddProject = async (newProject) => {
+  const handleAddProject = async (projectData) => {
     try {
-      // First verify the user's role
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user);
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-      
-      console.log('User profile:', profile);
-
-      if (profileError) {
-        throw new Error('Could not verify user role');
-      }
-
-      if (profile?.role !== 'editor') {
-        throw new Error('User does not have editor permissions');
-      }
-
-      // Proceed with project creation
-      const projectData = {
-        name: newProject.name,
-        summary: newProject.summary,
-        goals: newProject.goals,
-        created_at: new Date().toISOString()
-      };
-
-      console.log('Sending project data:', projectData);
-
-      const { data: project, error: projectError } = await supabase
+      const { data, error } = await supabase
         .from('projects')
-        .insert([projectData])
-        .select()
-        .single();
+        .insert([{
+          name: projectData.name,
+          summary: projectData.summary,
+          kpis: projectData.kpis
+        }])
+        .select();
 
-      if (projectError) {
-        console.error('Project creation error:', projectError);
-        throw new Error(projectError.message);
-      }
+      if (error) throw error;
 
-      console.log('Project created:', project);
-
-      const projectWithMilestones = {
-        ...project,
-        milestones: []
-      };
-
-      setProjects(prevProjects => {
-        const newProjects = [...prevProjects, projectWithMilestones];
-        requestAnimationFrame(() => {
-          setActiveProject(newProjects.length - 1);
-        });
-        return newProjects;
-      });
-
+      setProjects([...projects, { ...data[0], milestones: [] }]);
       setShowProjectModal(false);
-
     } catch (error) {
-      console.error('Detailed error:', error);
-      alert(`Failed to create project: ${error.message}`);
+      console.error('Error adding project:', error);
+      alert('Failed to add project. Please try again.');
     }
   };
 
@@ -1180,6 +1229,40 @@ const Roadmap = () => {
   // Also add this log in the render
   console.log('Current userRole:', userRole); // Debug log
 
+  // Add this handler for editing projects
+  const handleEditProject = async (updatedProject) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          name: updatedProject.name,
+          summary: updatedProject.summary,
+          kpis: updatedProject.kpis
+        })
+        .eq('id', selectedProject.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProjects(prevProjects => {
+        const updatedProjects = [...prevProjects];
+        updatedProjects[activeProject] = {
+          ...updatedProjects[activeProject],
+          name: updatedProject.name,
+          summary: updatedProject.summary,
+          kpis: updatedProject.kpis
+        };
+        return updatedProjects;
+      });
+
+      setShowEditProjectModal(false);
+      setSelectedProject(null);
+    } catch (error) {
+      console.error('Error updating project:', error);
+      alert('Failed to update project. Please try again.');
+    }
+  };
+
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
       {/* Left column - Goals */}
@@ -1223,25 +1306,53 @@ const Roadmap = () => {
               ))}
             </select>
             {userRole === 'editor' && (
-              <button 
-                className="add-project-btn"
-                onClick={() => setShowProjectModal(true)}
-                title="Add New Project"
-              >
-                + New Project
-              </button>
+              <>
+                <button 
+                  className="edit-project-btn"
+                  onClick={() => {
+                    setSelectedProject(projects[activeProject]);
+                    setShowEditProjectModal(true);
+                  }}
+                  title="Edit Project"
+                >
+                  ✏️
+                </button>
+                <button 
+                  className="add-project-btn"
+                  onClick={() => setShowProjectModal(true)}
+                  title="Add New Project"
+                >
+                  + New Project
+                </button>
+              </>
             )}
           </div>
+          
+          {/* KPIs section moved outside and above project summary */}
+          <div className="project-kpis">
+            {projects[activeProject]?.kpis?.map((kpiId) => {
+              const kpi = Object.values(PROJECT_KPIS).find(k => k.id === kpiId);
+              if (!kpi) return null;
+              
+              return (
+                <div key={kpi.id} className="kpi-item">
+                  <span className="kpi-icon">{kpi.icon}</span>
+                  <span className="kpi-tooltip">{kpi.text}</span>
+                </div>
+              );
+            })}
+          </div>
+
           {projects.length > 0 && (
             <div className="project-summary">
-              {projects[activeProject].summary}
+              <p>{projects[activeProject].summary}</p>
               {userRole === 'editor' && (
-                <button 
+                <button
                   className="edit-summary-btn"
                   onClick={() => setShowSummaryModal(true)}
                   title="Edit Summary"
                 >
-                  <span>✏️</span>
+                  ✏️
                 </button>
               )}
             </div>
@@ -1465,6 +1576,19 @@ const Roadmap = () => {
         onAdd={handleAddNote}
         milestoneId={activeNotesMilestone}
       />
+
+      {/* Add this with the other modals */}
+      {showEditProjectModal && selectedProject && (
+        <EditProjectModal
+          isOpen={showEditProjectModal}
+          onClose={() => {
+            setShowEditProjectModal(false);
+            setSelectedProject(null);
+          }}
+          project={selectedProject}
+          onSave={handleEditProject}
+        />
+      )}
     </div>
   );
 };
