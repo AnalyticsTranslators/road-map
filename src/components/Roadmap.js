@@ -4,6 +4,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import '../styles/Roadmap.css';
 import { supabase } from '../supabase/config';
 import useWindowDimensions from '../hooks/useWindowDimensions';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import ProjectPDF from './ProjectPDF';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -718,6 +720,8 @@ const Roadmap = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showEditProjectModal, setShowEditProjectModal] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(['completed']); // Default to showing completed
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedProjectForExport, setSelectedProjectForExport] = useState(null);
   
   // Add this to determine layout
   const isMobile = width <= 768;
@@ -1302,6 +1306,13 @@ const Roadmap = () => {
     });
   };
 
+  // Add this handler function
+  const handleProjectContextMenu = (e, project) => {
+    e.preventDefault(); // Prevent default context menu
+    setSelectedProjectForExport(project);
+    setShowExportModal(true);
+  };
+
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
       {/* Left column - Goals */}
@@ -1325,30 +1336,30 @@ const Roadmap = () => {
       <div className="timeline-column" ref={timelineRef}>
         <div className="app-header">
           <h1>GM Insights Roadmap</h1>
-          {userRole === 'editor' && (
-            <div className="project-controls">
-              <button 
-                className="edit-project-btn"
-                onClick={() => {
-                  setSelectedProject(projects[activeProject]);
-                  setShowEditProjectModal(true);
-                }}
-                title="Edit Project"
-              >
-                <span className="button-icon">✎</span>
-              </button>
-              <button 
-                className="add-project-btn"
-                onClick={() => setShowProjectModal(true)}
-                title="Add New Project"
-              >
-                <span className="button-icon">+</span>
-              </button>
-            </div>
-          )}
-          <button className="sign-out-button" onClick={handleSignOut} title="Sign Out">
-            <span className="sign-out-icon">🚪</span>
-          </button>
+          <div className="project-controls">
+            {userRole === 'editor' && (
+              <>
+                <button
+                  className="edit-project-btn"
+                  onClick={() => {
+                    setSelectedProject(projects[activeProject]);
+                    setShowEditProjectModal(true);
+                  }}
+                >
+                  <span className="material-icons">edit</span>
+                </button>
+                <button
+                  className="add-project-btn"
+                  onClick={() => setShowProjectModal(true)}
+                >
+                  <span className="material-icons">add</span>
+                </button>
+              </>
+            )}
+            <button className="sign-out-button" onClick={handleSignOut} title="Sign Out">
+              <span className="sign-out-icon">🚪</span>
+            </button>
+          </div>
         </div>
         <div className={`project-header ${isHeaderVisible ? 'visible' : 'hidden'}`}>
           <div className="project-selector">
@@ -1358,6 +1369,8 @@ const Roadmap = () => {
                   key={project.id}
                   className={`project-tile ${index === activeProject ? 'active' : ''}`}
                   onClick={() => handleProjectChange(index)}
+                  onContextMenu={(e) => handleProjectContextMenu(e, project)}
+                  title="Right-click to export as PDF"
                 >
                   {project.name}
                 </button>
@@ -1748,6 +1761,43 @@ const Roadmap = () => {
           project={selectedProject}
           onSave={handleEditProject}
         />
+      )}
+
+      {/* Add this modal component near your other modals */}
+      {showExportModal && selectedProjectForExport && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>Export Project</h2>
+            <p>Do you want to export "{selectedProjectForExport.name}" as PDF?</p>
+            <div className="modal-actions">
+              <button 
+                className="cancel-btn" 
+                onClick={() => {
+                  setShowExportModal(false);
+                  setSelectedProjectForExport(null);
+                }}
+              >
+                Cancel
+              </button>
+              <PDFDownloadLink
+                document={
+                  <ProjectPDF 
+                    project={selectedProjectForExport}
+                    statusUpdates={selectedProjectForExport.status_updates}
+                    milestones={selectedProjectForExport.milestones}
+                  />
+                }
+                fileName={`${selectedProjectForExport.name}-roadmap.pdf`}
+              >
+                {({ loading }) => (
+                  <button className="submit-btn">
+                    {loading ? 'Preparing PDF...' : 'Download PDF'}
+                  </button>
+                )}
+              </PDFDownloadLink>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

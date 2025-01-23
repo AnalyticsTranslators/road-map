@@ -1810,3 +1810,27 @@
   gap: 0.5rem;
   z-index: 1001;
 }
+
+/* Update project tile styles to indicate right-click functionality */
+.project-tile::after {
+  content: '⋮';
+  position: absolute;
+  right: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.project-tile:hover::after {
+  opacity: 0.5;
+}
+
+/* Export modal specific styles */
+.modal p {
+  margin: 1rem 0 2rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.modal .submit-btn {
+  min-width: 120px;
+}
