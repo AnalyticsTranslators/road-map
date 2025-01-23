@@ -238,21 +238,25 @@ const EditSummaryModal = ({ isOpen, onClose, currentSummary, onSave }) => {
   );
 };
 
-const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => {
-  const [newUpdate, setNewUpdate] = useState({
-    title: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    status: 'not_started'
-  });
+const StatusModal = ({ isOpen, onClose, onSave, status = null }) => {
+  const [title, setTitle] = useState(status?.title || '');
+  const [currentStatus, setCurrentStatus] = useState(status?.status || 'not_started');
+
+  useEffect(() => {
+    if (status) {
+      setTitle(status.title);
+      setCurrentStatus(status.status);
+    }
+  }, [status]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const update = {
-      ...newUpdate,
-      id: Date.now()
-    };
-    onSave([...(currentUpdates || []), update]);
+    onSave({
+      ...(status || {}), // Keep existing properties if editing
+      title,
+      status: currentStatus,
+      id: status?.id || Date.now()
+    });
     onClose();
   };
 
@@ -260,53 +264,47 @@ const StatusUpdateModal = ({ isOpen, onClose, onSave, currentUpdates = [] }) => 
 
   return (
     <div className="modal-overlay">
-      <div className="modal">
-        <h2>Add Status Update</h2>
+      <div className="modal-content">
+        <h2>{status ? 'Edit Status Update' : 'Add Status Update'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Title</label>
             <input
               type="text"
-              value={newUpdate.title}
-              onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              value={newUpdate.description}
-              onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               required
             />
           </div>
           <div className="form-group">
             <label>Status</label>
-            <select
-              value={newUpdate.status}
-              onChange={(e) => setNewUpdate({ ...newUpdate, status: e.target.value })}
-            >
-              <option value="not_started">Not Started</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Date</label>
-            <input
-              type="date"
-              value={newUpdate.date}
-              onChange={(e) => setNewUpdate({ ...newUpdate, date: e.target.value })}
-              required
-            />
+            <div className="status-options">
+              <button
+                type="button"
+                className={`status-option ${currentStatus === 'completed' ? 'selected' : ''}`}
+                onClick={() => setCurrentStatus('completed')}
+              >
+                ✅ Completed
+              </button>
+              <button
+                type="button"
+                className={`status-option ${currentStatus === 'in_progress' ? 'selected' : ''}`}
+                onClick={() => setCurrentStatus('in_progress')}
+              >
+                ⏳ In Progress
+              </button>
+              <button
+                type="button"
+                className={`status-option ${currentStatus === 'not_started' ? 'selected' : ''}`}
+                onClick={() => setCurrentStatus('not_started')}
+              >
+                ❌ Not Started
+              </button>
+            </div>
           </div>
           <div className="modal-actions">
-            <button type="button" onClick={onClose} className="cancel-btn">
-              Cancel
-            </button>
-            <button type="submit" className="submit-btn">
-              Add Update
-            </button>
+            <button type="button" onClick={onClose}>Cancel</button>
+            <button type="submit">{status ? 'Save Changes' : 'Add Status'}</button>
           </div>
         </form>
       </div>
@@ -492,42 +490,6 @@ const EditMilestoneModal = ({ isOpen, onClose, onSave, milestone, user }) => {
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="modal-actions">
-            <button type="button" onClick={onClose}>Cancel</button>
-            <button type="button" onClick={handleSave}>Save Changes</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const EditStatusModal = ({ isOpen, onClose, onSave, status }) => {
-  const [title, setTitle] = useState(status?.title || '');
-
-  const handleSave = () => {
-    onSave({
-      ...status,
-      title,
-    });
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Edit Status Update</h2>
-        <div className="modal-form">
-          <div className="form-group">
-            <label>Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
           </div>
 
           <div className="modal-actions">
@@ -1370,10 +1332,9 @@ const Roadmap = () => {
         />
       )}
       {showStatusModal && (
-        <StatusUpdateModal
+        <StatusModal
           isOpen={showStatusModal}
           onClose={() => setShowStatusModal(false)}
-          currentUpdates={projects[activeProject].status_updates || []}
           onSave={handleUpdateStatus}
         />
       )}
@@ -1387,7 +1348,7 @@ const Roadmap = () => {
         />
       )}
       {showEditStatusModal && selectedStatus && (
-        <EditStatusModal
+        <StatusModal
           isOpen={showEditStatusModal}
           onClose={() => {
             setShowEditStatusModal(false);

@@ -1832,3 +1832,40 @@ h1, h2, h3, p {
   background: rgba(255, 59, 48, 0.2);
   transform: translateY(-1px);
 }
+
+/* Status options styling */
+.status-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.status-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.status-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.status-option.selected {
+  background: rgba(0, 170, 255, 0.1);
+  border-color: rgba(0, 170, 255, 0.2);
+}
+
+.status-option.selected:hover {
+  background: rgba(0, 170, 255, 0.15);
+}
