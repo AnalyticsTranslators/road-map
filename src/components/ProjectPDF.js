@@ -120,6 +120,38 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     borderBottom: '1px solid #eee',
   },
+  subHeader: {
+    fontSize: 18,
+    marginBottom: 15,
+    color: '#333',
+    borderBottom: 1,
+    borderBottomColor: '#DDD',
+    paddingBottom: 5,
+  },
+  summary: {
+    fontSize: 12,
+    marginBottom: 20,
+    color: '#666',
+  },
+  kpiItem: {
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: '#f8f9fa',
+    borderLeft: '3px solid #0070f3',
+    marginBottom: 8,
+    width: '48%',
+  },
+  kpiText: {
+    fontSize: 11,
+    color: '#444',
+  },
+  kpisGrid: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
 });
 
 const getStatusColor = (status) => {
@@ -156,6 +188,25 @@ const ProjectPDF = ({ project, statusUpdates, milestones }) => {
     'Not Started': statusUpdates?.filter(s => s.status_type === 'Not Started') || []
   };
 
+  // Helper function to get KPI details
+  const getKPIDetails = (kpiId) => {
+    const KPI_MAP = {
+      better_conversations: {
+        icon: '💬',
+        text: 'Enable better conversations with clients'
+      },
+      collaborate_insights: {
+        icon: '📊',
+        text: 'Collaborate across functions to deliver scalable data insights'
+      },
+      kpi_solutions: {
+        icon: '📈',
+        text: 'Enable business with KPI Measurement Solutions'
+      }
+    };
+    return KPI_MAP[kpiId] || null;
+  };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -163,6 +214,27 @@ const ProjectPDF = ({ project, statusUpdates, milestones }) => {
         <View style={styles.header}>
           <Text style={styles.projectTitle}>{project.name}</Text>
           <Text style={styles.projectDate}>Generated on {new Date().toLocaleDateString()}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.summary}>{project.summary}</Text>
+        </View>
+
+        {/* Team KPIs Section - Updated */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Team KPIs</Text>
+          <View style={styles.kpisGrid}>
+            {project.kpis?.map((kpiId) => {
+              const kpi = getKPIDetails(kpiId);
+              if (!kpi) return null;
+              
+              return (
+                <View key={kpiId} style={styles.kpiItem}>
+                  <Text style={styles.kpiText}>{kpi.text}</Text>
+                </View>
+              );
+            })}
+          </View>
         </View>
 
         {/* Team Goals Section */}

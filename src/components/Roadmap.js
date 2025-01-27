@@ -1333,20 +1333,41 @@ const Roadmap = () => {
 
   return (
     <div className={`roadmap-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`} ref={containerRef}>
-      {/* Left column - Goals */}
+      {/* Left column - Goals and KPIs */}
       <div className="goals-column">
-        <h2>Team Goals</h2>
-        <div className="goals-grid">
-          {Object.values(TEAM_GOALS).map((goal, index) => (
-            <div 
-              key={goal.id} 
-              className={`goal-tile ${projects[activeProject]?.goals.some(g => g.id === goal.id) ? 'achieved' : ''}`}
-              style={{ '--tile-index': index }}
-            >
-              <span className="goal-icon">{goal.icon}</span>
-              <span className="goal-label">{goal.label}</span>
-            </div>
-          ))}
+        {/* Team KPIs Section */}
+        <div className="team-section team-kpis">
+          <h2>Team KPIs</h2>
+          <div className="kpis-grid">
+            {projects[activeProject]?.kpis?.map((kpiId) => {
+              const kpi = Object.values(PROJECT_KPIS).find(k => k.id === kpiId);
+              if (!kpi) return null;
+              
+              return (
+                <div key={kpi.id} className="kpi-tile">
+                  <span className="kpi-icon">{kpi.icon}</span>
+                  <span className="kpi-label">{kpi.text}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Team Goals Section */}
+        <div className="team-section project-goals">
+          <h2>Team Goals</h2>
+          <div className="goals-grid">
+            {Object.values(TEAM_GOALS).map((goal, index) => (
+              <div 
+                key={goal.id} 
+                className={`goal-tile ${projects[activeProject]?.goals.some(g => g.id === goal.id) ? 'achieved' : ''}`}
+                style={{ '--tile-index': index }}
+              >
+                <span className="goal-icon">{goal.icon}</span>
+                <span className="goal-label">{goal.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -1410,21 +1431,7 @@ const Roadmap = () => {
             </div>
           </div>
           
-          {/* KPIs section moved outside and above project summary */}
-          <div className="project-kpis">
-            {projects[activeProject]?.kpis?.map((kpiId) => {
-              const kpi = Object.values(PROJECT_KPIS).find(k => k.id === kpiId);
-              if (!kpi) return null;
-              
-              return (
-                <div key={kpi.id} className="kpi-item">
-                  <span className="kpi-icon">{kpi.icon}</span>
-                  <span className="kpi-tooltip">{kpi.text}</span>
-                </div>
-              );
-            })}
-          </div>
-
+          {/* Project summary without KPIs */}
           {projects.length > 0 && (
             <div className="project-summary">
               <p>{projects[activeProject].summary}</p>
@@ -1479,16 +1486,19 @@ const Roadmap = () => {
                     <div className="milestone-date">{milestone.date}</div>
                     <p>{milestone.description}</p>
                     {milestone.notes && milestone.notes.length > 0 && (
-                      <div className="milestone-notes">
-                        {milestone.notes.map(note => (
-                          <div key={note.id} className={`note-item note-${note.type.toLowerCase()}`}>
-                            <span className="note-icon">
-                              {NOTE_TYPES[note.type.toUpperCase()]?.icon || 'ℹ️'}
-                            </span>
-                            <span className="note-content">{note.content}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <>
+                        <div className="notes-header">Notes</div>
+                        <div className="milestone-notes">
+                          {milestone.notes.map(note => (
+                            <div key={note.id} className={`note-item note-${note.type.toLowerCase()}`}>
+                              <span className="note-icon">
+                                {NOTE_TYPES[note.type.toUpperCase()]?.icon || 'ℹ️'}
+                              </span>
+                              <span className="note-content">{note.content}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
                     )}
                     <div className="progress-bar">
                       <div 
